@@ -35,6 +35,8 @@ module.exports.login = async (req, res) => {
         )
         const token = tokens({ email: user.email })
 
+        logger.info(`사용자가 로그인 하였습니다, ${user.email}`)
+
         // 쿠키 설정
         res.cookie('accessToken', token.accessToken, { httpOnly: true })
         if (req.body.keepLoggedin) {
@@ -109,10 +111,88 @@ module.exports.refresh = (req, res) => {
 }
 
 module.exports.logout = (req, res) => {
+  logger.info(`사용자가 로그아웃 하였습니다, ${req.query.user}`)
   req.logout()
   return res
     .clearCookie('accessToken')
     .clearCookie('refreshToken')
     .status(200)
     .json({ user: null, message: '로그아웃 되었습니다.' })
+}
+
+module.exports.register = async (req, res) => {
+  try {
+    let user = await Users.findOne({ email: req.body.email })
+    if (user) {
+      return res.status(403).json({ message: '이미 가입된 이메일 입니다' })
+    }
+    user = new Users(req.body)
+    await user.save()
+
+    const token = tokens({ email: req.body.email })
+    logger.info(`새로운 사용자가 가입 하였습니다, ${req.body.email}`)
+    res
+      .cookie('accessToken', token.accessToken, { httpOnly: true })
+      .status(200)
+      .end()
+  } catch (err) {
+    logger.error(`회원가입중 에러, ${err}`)
+    res.status(500).json({ user: null, error: err })
+  }
+}
+
+module.exports.users = async (req, res) => {
+  try {
+    if (req.user.admin) {
+      const users = await Users.find({}, { password: 0 })
+      res.status(200).json({ users: users })
+    } else {
+      res.sendStatus(403)
+    }
+  } catch (error) {
+    logger.error(`사용자 조회중 에러 발생, ${error}`)
+    res
+      .status(500)
+      .json({ message: '사용자 조회중 에러가 발생하였습니다', error: error })
+  }
+}
+
+module.exports.admin = async (req, res) => {
+  try {
+    if (req.user.admin) {
+      const { id, value } = req.query
+      const r = await Users.updateOne({ _id: id }, { $set: { admin: value } })
+      res.status(200).json(r)
+    } else {
+      res.sendStatus(403)
+    }
+  } catch (err) {
+    logger.error(`관리자 권한 수정중 에러, ${err}`)
+    res.status(500).json({ message: '서버 에러가 발생하였습니다', error: err })
+  }
+}
+
+module.exports.color = async (req, res) => {
+  try {
+    const { email, color } = req.body
+    console.log(email, color)
+    const r = await Users.updateOne(
+      { email: email },
+      { $set: { color: color } }
+    )
+    res.status(200).json(r)
+  } catch (err) {
+    logger.error(`사용자 컬러 변경중 에러 ${err}`)
+    res.status(500).json({ error: err, message: '서버 에러가 발생하였습니다.' })
+  }
+}
+
+module.exports.delete = async (req, res) => {
+  try {
+    const { id } = req.query
+    const r = await Users.findByIdAndDelete(id)
+    res.status(200).json(r)
+  } catch (error) {
+    logger.error(`사용자 삭제중 에러, ${error}`)
+  }
 }
