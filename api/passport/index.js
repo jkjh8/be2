@@ -48,7 +48,6 @@ const jwrRefreshOption = {
 }
 
 async function localVerify(email, password, done) {
-  console.log('start verify')
   try {
     // 사용자 찾기
     const user = await Users.findOne({ email: email })
