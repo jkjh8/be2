@@ -11,7 +11,7 @@ const userSchema = new mongoose.Schema(
     auth: { type: Array },
     numberOfLogin: { type: Number, default: 0 },
     loginAt: { type: Date },
-    color: { type: String, default: '##91ECEC' }
+    color: { type: String, default: '#91ECEC' }
   },
   {
     timestamp: true

@@ -19,11 +19,17 @@ module.exports.login = async (req, res) => {
     async (err, user, info) => {
       try {
         if (err) {
-          return res.status(500).json({ user: user, error: err })
+          return res
+            .status(500)
+            .json({
+              user: user,
+              error: err,
+              message: '사용자 인증과정에 문제가 발생하였습니다'
+            })
         }
 
         if (!user) {
-          return res.status(403).json({ user: user, info: info })
+          return res.status(403).json({ user: user, message: info })
         }
 
         // 사용자 정보 업데이트
@@ -49,7 +55,13 @@ module.exports.login = async (req, res) => {
         res.status(200).json({ user: user }).end()
       } catch (err) {
         logger.error(`로그인 과정에서 에러 발생, ${err}`)
-        res.status(500).json({ user: false, error: err })
+        res
+          .status(500)
+          .json({
+            user: false,
+            error: err,
+            message: '서버 오류가 발생하였습니다'
+          })
       }
     }
   )(req, res)

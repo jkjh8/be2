@@ -52,13 +52,13 @@ async function localVerify(email, password, done) {
     // 사용자 찾기
     const user = await Users.findOne({ email: email })
     if (!user) {
-      return done(null, false, { message: '사용자를 찾을 수 없습니다.' })
+      return done(null, false, '사용자를 찾을 수 없습니다.')
     }
     // 비밀번호 검증
     if (bcrypt.compareSync(password, user.password)) {
-      return done(null, user, { message: '로그인 성공 하였습니다.' })
+      return done(null, user, '로그인 성공 하였습니다.')
     } else {
-      return done(null, false, { message: '패스워드가 일치 하지 않습니다.' })
+      return done(null, false, '패스워드가 일치 하지 않습니다.')
     }
   } catch (err) {
     logger.error(`사용장 인증 에러 Local, ${err}`)
@@ -72,12 +72,12 @@ async function jwtVerify(payload, done) {
   try {
     const user = await Users.findOne({ email: payload.email })
     if (!user) {
-      return done(null, false, { message: '사용자를 찾을 수 없습니다' })
+      return done(null, false, '사용자를 찾을 수 없습니다')
     }
-    done(null, user, { message: '로그인 성공 JWR', req: payload })
+    done(null, user, '로그인 성공 JWR')
   } catch (err) {
     logger.error(`사용자 인증 에러 JWT ${err}`)
-    done(null, false, { message: '사용자 인증과정에 장애가 발생하였습니다.' })
+    done(null, false, '사용자 인증과정에 장애가 발생하였습니다.')
   }
 }
 
