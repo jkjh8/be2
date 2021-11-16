@@ -3,10 +3,12 @@ require('app-module-path').addPath(__dirname)
 
 const express = require('express')
 const path = require('path')
+const fs = require('fs')
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
 const httpLogger = require('morgan')
 const logger = require('config/logger')
+const eventlog = require('api/eventlog')
 
 const indexRouter = require('./routes/index')
 const apiRouter = require('./routes/api')
@@ -42,9 +44,25 @@ app.use(express.urlencoded({ extended: false }))
 app.use(cookieParser())
 app.use(express.static(path.join(__dirname, 'public')))
 
+// router
 app.use('/', indexRouter)
 app.use('/api', apiRouter)
 
 logger.info('Server start!')
+eventlog.info({ message: 'Server Start!' })
 
+// file
+function makeFolder(folder) {
+  if (!fs.existsSync(folder)) {
+    fs.mkdirSync(folder)
+  }
+}
+global.filesPath = path.join(__dirname, 'files')
+makeFolder(filesPath)
+makeFolder(path.join(filesPath, 'media'))
+makeFolder(path.join(filesPath, 'schedule'))
+makeFolder(path.join(filesPath, 'temp'))
+
+app.use('/files', express.static(filesPath))
+app.use('/media', express.static(path.join(filesPath, 'media')))
 module.exports = app

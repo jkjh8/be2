@@ -13,19 +13,18 @@ function tokens(user) {
 }
 
 module.exports.login = async (req, res) => {
+  console.log(req.body)
   passport.authenticate(
     'local',
     { session: false },
     async (err, user, info) => {
       try {
         if (err) {
-          return res
-            .status(500)
-            .json({
-              user: user,
-              error: err,
-              message: '사용자 인증과정에 문제가 발생하였습니다'
-            })
+          return res.status(500).json({
+            user: user,
+            error: err,
+            message: '사용자 인증과정에 문제가 발생하였습니다'
+          })
         }
 
         if (!user) {
@@ -45,7 +44,7 @@ module.exports.login = async (req, res) => {
 
         // 쿠키 설정
         res.cookie('accessToken', token.accessToken, { httpOnly: true })
-        if (req.body.keepLoggedin) {
+        if (req.body.keepLoggedIn) {
           res.cookie('refreshToken', token.refreshToken, { httpOnly: true })
         } else {
           res.clearCookie('refreshToken')
@@ -55,13 +54,11 @@ module.exports.login = async (req, res) => {
         res.status(200).json({ user: user }).end()
       } catch (err) {
         logger.error(`로그인 과정에서 에러 발생, ${err}`)
-        res
-          .status(500)
-          .json({
-            user: false,
-            error: err,
-            message: '서버 오류가 발생하였습니다'
-          })
+        res.status(500).json({
+          user: false,
+          error: err,
+          message: '서버 오류가 발생하였습니다'
+        })
       }
     }
   )(req, res)
@@ -173,7 +170,10 @@ module.exports.admin = async (req, res) => {
   try {
     if (req.user.admin) {
       const { id, value } = req.query
-      const r = await Users.updateOne({ _id: id }, { $set: { admin: value } })
+      const r = await Users.updateOne(
+        { _id: id },
+        { $set: { admin: value === 'true' ? true : false } }
+      )
       res.status(200).json(r)
     } else {
       res.sendStatus(403)
@@ -196,6 +196,20 @@ module.exports.color = async (req, res) => {
   } catch (err) {
     logger.error(`사용자 컬러 변경중 에러 ${err}`)
     res.status(500).json({ error: err, message: '서버 에러가 발생하였습니다.' })
+  }
+}
+
+module.exports.level = async (req, res) => {
+  try {
+    const { id, value } = req.query
+    console.log(id, value)
+    const r = await Users.updateOne(
+      { _id: id },
+      { $set: { userLevel: Number(value) } }
+    )
+    res.status(200).json(r)
+  } catch (err) {
+    logger.error(`사용자 등급 수정에러 ${err}`)
   }
 }
 
