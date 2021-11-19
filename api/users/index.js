@@ -42,16 +42,8 @@ module.exports.login = async (req, res) => {
 
         logger.info(`사용자가 로그인 하였습니다, ${user.email}`)
 
-        // 쿠키 설정
-        // res.cookie('accessToken', token.accessToken, { httpOnly: true })
-        // if (req.body.keepLoggedIn) {
-        //   res.cookie('refreshToken', token.refreshToken, { httpOnly: true })
-        // } else {
-        //   res.clearCookie('refreshToken')
-        // }
-
         // 사용자정보 전송
-        res.status(200).json({ user: user, token: token }).end()
+        res.status(200).json({ user: user, token: token })
       } catch (err) {
         logger.error(`로그인 과정에서 에러 발생, ${err}`)
         res.status(500).json({
@@ -72,19 +64,14 @@ module.exports.get = (req, res) => {
       }
 
       if (!user) {
-        return res.status(403).json({
+        return res.status(401).json({
           user: user,
           info: info,
           message: '사용자를 찾을 수 없습니다'
         })
       }
 
-      const token = tokens({ email: user.email })
-      res
-        .cookie('accessToken', token.accessToken, { httpOnly: true })
-        .status(200)
-        .json({ user: user, info: info })
-        .end()
+      res.status(200).json({ user: user })
     } catch (err) {
       logger.error(`토큰인증과정에서 에러 발생, ${err}`)
     }
@@ -92,41 +79,19 @@ module.exports.get = (req, res) => {
 }
 
 module.exports.refresh = (req, res) => {
-  passport.authenticate('refresh', { session: false }, (err, user, info) => {
-    try {
-      if (err) {
-        return res.status(500).json({ user: user, error: err })
-      }
-
-      if (!user) {
-        return res.status(403).json({
-          user: user,
-          info: info,
-          message: '사용자를 찾을 수 없습니다'
-        })
-      }
-
-      const token = tokens({ email: user.email })
-      res
-        .cookie('accessToken', token.accessToken, { httpOnly: true })
-        .cookie('refreshToken', token.refreshToken, { httpOnly: true })
-        .status(200)
-        .json({ user: user, info: info })
-        .end()
-    } catch (err) {
-      logger.error(`토큰인증과정에서 에러 발생, ${err}`)
-    }
-  })(req, res)
+  console.log('refresh', req.headers)
+  try {
+    const token = tokens({ email: req.user.email })
+    res.status(200).json({ token: token })
+  } catch (err) {
+    logger.error(`토큰 재발행 에러 발생, ${err}`)
+  }
 }
 
 module.exports.logout = (req, res) => {
   logger.info(`사용자가 로그아웃 하였습니다, ${req.query.user}`)
   req.logout()
-  return res
-    .clearCookie('accessToken')
-    .clearCookie('refreshToken')
-    .status(200)
-    .json({ user: null, message: '로그아웃 되었습니다.' })
+  return res.status(200).json({ user: null, message: '로그아웃 되었습니다.' })
 }
 
 module.exports.register = async (req, res) => {
@@ -140,10 +105,7 @@ module.exports.register = async (req, res) => {
 
     const token = tokens({ email: req.body.email })
     logger.info(`새로운 사용자가 가입 하였습니다, ${req.body.email}`)
-    res
-      .cookie('accessToken', token.accessToken, { httpOnly: true })
-      .status(200)
-      .end()
+    res.status(200).json({ user: user, token: token })
   } catch (err) {
     logger.error(`회원가입중 에러, ${err}`)
     res.status(500).json({ user: null, error: err })

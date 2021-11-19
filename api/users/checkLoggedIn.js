@@ -2,8 +2,6 @@ const passport = require('passport')
 const logger = require('config/logger')
 
 module.exports.isLoggedIn = (req, res, next) => {
-  console.log('islogins')
-  console.log(req)
   passport.authenticate('access', { session: false }, (err, user) => {
     try {
       if (err) {

@@ -7,6 +7,8 @@ const fs = require('fs')
 const cors = require('cors')
 const cookieParser = require('cookie-parser')
 const httpLogger = require('morgan')
+const fileupload = require('express-fileupload')
+
 const logger = require('config/logger')
 const eventlog = require('api/eventlog')
 
@@ -37,6 +39,9 @@ const passport = require('passport')
 const passportConfig = require('api/passport')
 passportConfig()
 app.use(passport.initialize())
+
+// fileupload
+app.use(fileupload())
 
 app.use(httpLogger('dev'))
 app.use(express.json())
