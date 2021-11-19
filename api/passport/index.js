@@ -6,6 +6,7 @@ require('dotenv').config()
 
 const Users = require('db/models/users')
 const JWTStrategy = require('passport-jwt').Strategy
+const ExtractJWT = require('passport-jwt').ExtractJwt
 const LocalStrategy = require('passport-local').Strategy
 
 const getAccessToken = (req) => {
@@ -38,7 +39,7 @@ const localOption = {
 }
 
 const jwtOption = {
-  jwtFromRequest: getAccessToken,
+  jwtFromRequest: ExtractJWT.fromAuthHeaderAsBearerToken(),
   secretOrKey: process.env.JWT_SECRET
 }
 
