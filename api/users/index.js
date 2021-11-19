@@ -7,8 +7,8 @@ const Users = require('db/models/users')
 
 function tokens(user) {
   return {
-    accessToken: jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '1h' }),
-    refreshToken: jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '7d' })
+    access: jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '1h' }),
+    refresh: jwt.sign(user, process.env.JWT_SECRET, { expiresIn: '7d' })
   }
 }
 
@@ -43,15 +43,15 @@ module.exports.login = async (req, res) => {
         logger.info(`사용자가 로그인 하였습니다, ${user.email}`)
 
         // 쿠키 설정
-        res.cookie('accessToken', token.accessToken, { httpOnly: true })
-        if (req.body.keepLoggedIn) {
-          res.cookie('refreshToken', token.refreshToken, { httpOnly: true })
-        } else {
-          res.clearCookie('refreshToken')
-        }
+        // res.cookie('accessToken', token.accessToken, { httpOnly: true })
+        // if (req.body.keepLoggedIn) {
+        //   res.cookie('refreshToken', token.refreshToken, { httpOnly: true })
+        // } else {
+        //   res.clearCookie('refreshToken')
+        // }
 
         // 사용자정보 전송
-        res.status(200).json({ user: user }).end()
+        res.status(200).json({ user: user, token: token }).end()
       } catch (err) {
         logger.error(`로그인 과정에서 에러 발생, ${err}`)
         res.status(500).json({

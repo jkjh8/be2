@@ -2,6 +2,8 @@ const passport = require('passport')
 const logger = require('config/logger')
 
 module.exports.isLoggedIn = (req, res, next) => {
+  console.log('islogins')
+  console.log(req)
   passport.authenticate('access', { session: false }, (err, user) => {
     try {
       if (err) {
@@ -11,7 +13,7 @@ module.exports.isLoggedIn = (req, res, next) => {
         req.user = user
         next()
       } else {
-        res.status(403).redirect('/').send('user not login')
+        res.status(401).redirect('/').send('user not login')
       }
     } catch (err) {
       logger.error(`로그인 체크 에러, ${err}`)
