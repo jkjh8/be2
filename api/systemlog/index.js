@@ -8,7 +8,7 @@ module.exports.get = async (req, res) => {
     const paginateOptions = {
       page: page,
       limit: limit,
-      sort: { createdAt: -1 }
+      sort: { timestamp: -1 }
     }
 
     const r = await Eventlog.paginate({}, paginateOptions)

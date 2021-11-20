@@ -3,7 +3,7 @@ const logger = require('config/logger')
 
 module.exports.info = async (msg) => {
   const eventMessage = new Eventlog({
-    category: 'info',
+    priority: 'info',
     message: msg.message
   })
   if (msg.source) {
@@ -17,7 +17,7 @@ module.exports.info = async (msg) => {
 
 module.exports.warning = async (msg) => {
   const eventMessage = new Eventlog({
-    category: 'warning',
+    priority: 'warning',
     message: msg.message
   })
   if (msg.source) {
@@ -31,7 +31,7 @@ module.exports.warning = async (msg) => {
 
 module.exports.error = async (msg) => {
   const eventMessage = new Eventlog({
-    category: 'error',
+    priority: 'error',
     message: msg.message
   })
   if (msg.source) {
