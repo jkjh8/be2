@@ -81,26 +81,28 @@ module.exports.createFolder = async (req, res) => {
           source: email,
           message: `폴더 생성 - 중복 폴더 Path: ${targert}`
         })
-        logger.warning(`폴더 생성 - 중복 폴더, user:${email}, path: ${target}`)
+        logger.warning(`폴더 생성 - 중복 폴더 - User:${email}, Path: ${target}`)
         res.status(500).json({ error: null, message: '중복 폴더' })
       } else {
         fs.mkdirSync(target)
-        logger.info(`폴더 생성 - 완료 user:${email}, path: ${target}`)
-        res.status(200).json({ message: '생성완료', path: target })
+        logger.info(`폴더 생성 - 완료  - User:${email}, Path: ${target}`)
+        res.status(200).json({ message: '생성완료', Path: target })
       }
     } else {
       eventlog.error({
         source: email,
-        message: `폴더 생성 - 위치없음 Path: ${currentPath}}`
+        message: `폴더 생성 - 위치없음 - Path: ${currentPath}}`
       })
-      logger.error(`폴더 생성 - 위치없음. user: ${email}, path: ${currentPath}`)
+      logger.error(
+        `폴더 생성 - 위치없음 - User: ${email}, Path: ${currentPath}`
+      )
       res.status(500).json({
         error: null,
         message: '생성할 폴더의 위치가 존재 하지 않습니다'
       })
     }
 
-    logger.info(`폴더가 생성되었습니다. user: ${email}, path: ${currentPath}`)
+    logger.info(`폴더 생성 - User: ${email}, Path: ${currentPath}`)
   } catch (err) {
     logger.error(`폴더 생성 - 서버 에러 ${err}`)
     res.status(500).json({ error: err, message: '폴더를 생성할 수 없습니다' })
@@ -158,31 +160,33 @@ exports.upload = async (req, res) => {
     const { file } = req.files
     const uploadedfile = path.join(folder, file.name)
     if (!file || Object.keys(file).length === 0) {
-      logger.error(`파일업로드 - 파일없음`)
+      logger.error(`파일 업로드 - 파일없음`)
       return res.status(400).json({ message: '파일없음' })
     }
     const currentPath = path.join(filesPath, folder, file.name)
     file.mv(currentPath, function (err) {
       if (err) {
-        logger.error(`파일업로드 - 에러 path: ${uploadedfile} error: ${err}`)
+        logger.error(`파일 업로드 - 에러 - path: ${uploadedfile} error: ${err}`)
         eventlog.error({
           source: req.user.email,
-          message: `파일업로드 - 에러' path: ${uploadedfile} error: ${err}`
+          message: `파일 업로드 - 에러 - path: ${uploadedfile} error: ${err}`
         })
       }
-      logger.info(`파일업로드 - 완료 path: ${uploadedfile}`)
+      logger.info(`파일 업로드 - 완료 - path: ${uploadedfile}`)
       eventlog.info({
         source: req.user.email,
-        message: `파일업로드 - 완료 path:${uploadedfile}`
+        message: `파일 업로드 - 완료 - path:${uploadedfile}`
       })
       res.status(200).json({ message: '파일 업로드 완료' })
     })
   } catch (err) {
     const uploadedfile = path.join(folder, file.name)
-    logger.error(`파일업로드 - 서버 에러 path: ${uploadedfile} error: ${err}`)
+    logger.error(
+      `파일 업로드 - 서버 에러 - path: ${uploadedfile} error: ${err}`
+    )
     eventlog.error({
       source: req.user.email,
-      message: `파일업로드 - 서버 에러' path: ${uploadedfile} error: ${err}`
+      message: `파일 업로드 - 서버 에러 - path: ${uploadedfile} error: ${err}`
     })
     res.status(500).json({ error: err })
   }

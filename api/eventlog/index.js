@@ -64,7 +64,7 @@ module.exports.get = async (req, res) => {
     )
     res.status(200).json(r)
   } catch (err) {
-    logger.error(`이벤트로그 - 서버에러 ${err}`)
+    logger.error(`이벤트로그 - 서버에러 - ${err}`)
     res.status(500).json({ error: err })
   }
 }

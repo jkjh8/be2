@@ -106,10 +106,10 @@ module.exports.register = async (req, res) => {
 
     const token = tokens({ email: req.body.email })
     delete token.refresh
-    logger.info(`새로운 사용자가 가입 하였습니다, ${req.body.email}`)
+    logger.info(`회원가입 - ${req.body.email}`)
     res.status(200).json({ user: user, token: token })
   } catch (err) {
-    logger.error(`회원가입중 에러, ${err}`)
+    logger.error(`회원가입 - 에러 - ${err}`)
     res.status(500).json({ user: null, error: err })
   }
 }
@@ -123,7 +123,7 @@ module.exports.users = async (req, res) => {
       res.sendStatus(403)
     }
   } catch (error) {
-    logger.error(`사용자 조회중 에러 발생, ${error}`)
+    logger.error(`사용자 조회 - 에러 - ${error}`)
     res
       .status(500)
       .json({ message: '사용자 조회중 에러가 발생하였습니다', error: error })
@@ -143,7 +143,7 @@ module.exports.admin = async (req, res) => {
       res.sendStatus(403)
     }
   } catch (err) {
-    logger.error(`관리자 권한 수정중 에러, ${err}`)
+    logger.error(`관리자 권한 변경 - 서버 에러 - ${err}`)
     res.status(500).json({ message: '서버 에러가 발생하였습니다', error: err })
   }
 }
@@ -158,7 +158,7 @@ module.exports.color = async (req, res) => {
     )
     res.status(200).json(r)
   } catch (err) {
-    logger.error(`사용자 컬러 변경중 에러 ${err}`)
+    logger.error(`사용자 컬러 변경 - 서버 에러 - ${err}`)
     res.status(500).json({ error: err, message: '서버 에러가 발생하였습니다.' })
   }
 }
@@ -173,7 +173,7 @@ module.exports.level = async (req, res) => {
     )
     res.status(200).json(r)
   } catch (err) {
-    logger.error(`사용자 등급 수정에러 ${err}`)
+    logger.error(`사용자 등급 수정 - 서버 에러 - ${err}`)
   }
 }
 
@@ -201,6 +201,7 @@ module.exports.checkEmail = async (req, res) => {
         .json({ result: true, message: '사용가능한 이메일 입니다.' })
     }
   } catch (err) {
+    logger.error(`이메일 중복 확인 - 서버 에러 - ${req.query.email}`)
     res
       .status(500)
       .json({ result: false, message: '서버 오류가 발생하였습니다' })
