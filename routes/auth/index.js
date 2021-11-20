@@ -10,4 +10,5 @@ router.post('/login', fnAuth.login)
 router.get('/login', fnAuth.get)
 router.get('/refresh', isLoggedIn, fnAuth.refresh)
 router.get('/logout', fnAuth.logout)
+router.get('/checkEmail', fnAuth.checkEmail)
 module.exports = router

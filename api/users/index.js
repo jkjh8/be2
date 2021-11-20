@@ -13,7 +13,6 @@ function tokens(user) {
 }
 
 module.exports.login = async (req, res) => {
-  console.log(req.body)
   passport.authenticate(
     'local',
     { session: false },
@@ -39,6 +38,9 @@ module.exports.login = async (req, res) => {
           }
         )
         const token = tokens({ email: user.email })
+        if (!req.body.keepLoggedIn) {
+          delete token.refresh
+        }
 
         logger.info(`사용자가 로그인 하였습니다, ${user.email}`)
 
@@ -79,7 +81,6 @@ module.exports.get = (req, res) => {
 }
 
 module.exports.refresh = (req, res) => {
-  console.log('refresh', req.headers)
   try {
     const token = tokens({ email: req.user.email })
     res.status(200).json({ token: token })
@@ -104,6 +105,7 @@ module.exports.register = async (req, res) => {
     await user.save()
 
     const token = tokens({ email: req.body.email })
+    delete token.refresh
     logger.info(`새로운 사용자가 가입 하였습니다, ${req.body.email}`)
     res.status(200).json({ user: user, token: token })
   } catch (err) {
@@ -182,5 +184,25 @@ module.exports.delete = async (req, res) => {
     res.status(200).json(r)
   } catch (error) {
     logger.error(`사용자 삭제중 에러, ${error}`)
+  }
+}
+
+module.exports.checkEmail = async (req, res) => {
+  try {
+    const { email } = req.query
+    const r = await Users.find({ email: email })
+    if (r && r.length > 0) {
+      res
+        .status(200)
+        .json({ result: false, message: '이미 사용중인 이메일 입니다' })
+    } else {
+      res
+        .status(200)
+        .json({ result: true, message: '사용가능한 이메일 입니다.' })
+    }
+  } catch (err) {
+    res
+      .status(500)
+      .json({ result: false, message: '서버 오류가 발생하였습니다' })
   }
 }

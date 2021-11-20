@@ -35,10 +35,13 @@ const logFormat = combine(
   timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
   printf((info) => {
     if (info.stack) {
-      return `${info.level} ${info.timestamp} - ${info.message} \n Error Stack: ${info.stack}`
+      return `${info.level.toUpperCase()} ${info.timestamp} - ${
+        info.message
+      } \n Error Stack: ${info.stack}`
     }
-    return `${info.level} ${info.timestamp} - ${info.message}`
-  })
+    return `${info.level.toUpperCase()} ${info.timestamp} - ${info.message}`
+  }),
+  winston.format.metadata()
 )
 
 // 콘솔에 찍힐 때는 색깔을 구변해서 로깅해주자.
@@ -79,7 +82,7 @@ const transports = [
     options: {
       useUnifiedTopology: true
     },
-    collection: 'server_log',
+    collection: 'serverlogs',
     format: winston.format.combine(
       winston.format.timestamp(),
       winston.format.json()

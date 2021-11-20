@@ -11,7 +11,7 @@ const eventlogSchema = new mongoose.Schema(
     search: { type: String }
   },
   {
-    timestamp: true
+    timestamps: true
   }
 )
 eventlogSchema.index({ '$**': 'text' })

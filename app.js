@@ -54,7 +54,7 @@ app.use('/', indexRouter)
 app.use('/api', apiRouter)
 
 logger.info('Server start!')
-eventlog.info({ message: 'Server Start!' })
+eventlog.info({ message: '미디어 서버가 시작하였습니다' })
 
 // file
 function makeFolder(folder) {
