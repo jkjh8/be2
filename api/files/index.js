@@ -81,11 +81,11 @@ module.exports.createFolder = async (req, res) => {
           source: email,
           message: `폴더 생성 - 중복 폴더 Path: ${targert}`
         })
-        logger.warning(`폴더 생성 - 중복 폴더 - User:${email}, Path: ${target}`)
+        logger.warning(`폴더 생성 - 중복 폴더 - User:${email}  Path: ${target}`)
         res.status(500).json({ error: null, message: '중복 폴더' })
       } else {
         fs.mkdirSync(target)
-        logger.info(`폴더 생성 - 완료  - User:${email}, Path: ${target}`)
+        logger.info(`폴더 생성 - 완료  - User:${email}  Path: ${target}`)
         res.status(200).json({ message: '생성완료', Path: target })
       }
     } else {
@@ -94,7 +94,7 @@ module.exports.createFolder = async (req, res) => {
         message: `폴더 생성 - 위치없음 - Path: ${currentPath}}`
       })
       logger.error(
-        `폴더 생성 - 위치없음 - User: ${email}, Path: ${currentPath}`
+        `폴더 생성 - 위치없음 - User: ${email}  Path: ${currentPath}`
       )
       res.status(500).json({
         error: null,
@@ -102,7 +102,7 @@ module.exports.createFolder = async (req, res) => {
       })
     }
 
-    logger.info(`폴더 생성 - User: ${email}, Path: ${currentPath}`)
+    logger.info(`폴더 생성 - User: ${email}  Path: ${currentPath}`)
   } catch (err) {
     logger.error(`폴더 생성 - 서버 에러 ${err}`)
     res.status(500).json({ error: err, message: '폴더를 생성할 수 없습니다' })
@@ -130,25 +130,25 @@ module.exports.delete = async function (req, res) {
 
     if (type === 'directory') {
       removeFolder(target)
-      logger.info(`폴더삭제 - user: ${req.user.email}, path: ${target}`)
+      logger.info(`폴더 삭제 - user: ${req.user.email}  path: ${target}`)
     } else {
       if (fs.existsSync(target)) {
         fs.unlinkSync(target)
-        logger.info(`파일삭제 - user: ${req.user.email}, path: ${target}`)
+        logger.info(`파일 삭제 - user: ${req.user.email}  path: ${target}`)
       }
     }
     eventlog.info({
       source: req.user.email,
-      message: `파일(폴더) 삭제 완료 Path: ${target}`
+      message: `파일 (폴더) 삭제 완료 Path: ${target}`
     })
     return res.status(200).json({ target: target, messsage: '삭제완료' })
   } catch (err) {
     eventlog.error({
       source: req.user.email,
-      message: `파일(폴더) 삭제 에러 Path: ${req.body.name}`
+      message: `파일 (폴더) 삭제 에러 Path: ${req.body.name}`
     })
     logger.error(
-      `파일삭제 - 서버 에러 user: ${req.user.email}, path: ${req.body.name} error: ${err}`
+      `파일삭제 - 서버 에러 user: ${req.user.email}  path: ${req.body.name} error: ${err}`
     )
     res.status(500).json({ error: err, message: '파일삭제 서버에러' })
   }

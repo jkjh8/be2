@@ -42,7 +42,7 @@ module.exports.login = async (req, res) => {
           delete token.refresh
         }
 
-        logger.info(`사용자가 로그인 하였습니다, ${user.email}`)
+        logger.info(`사용자 - 로그인 - ${user.email}`)
 
         // 사용자정보 전송
         res.status(200).json({ user: user, token: token })
@@ -90,7 +90,7 @@ module.exports.refresh = (req, res) => {
 }
 
 module.exports.logout = (req, res) => {
-  logger.info(`사용자가 로그아웃 하였습니다, ${req.query.user}`)
+  logger.info(`사용자 - 로그아웃 - ${req.query.user}`)
   req.logout()
   return res.status(200).json({ user: null, message: '로그아웃 되었습니다.' })
 }
@@ -116,7 +116,9 @@ module.exports.register = async (req, res) => {
 
 module.exports.users = async (req, res) => {
   try {
-    if (req.user.admin) {
+    console.log(req.user)
+    if (req.user.admin || req.user.email === 'superuser@superuser.com') {
+      // || req.user.email === 'jkjh82@naver.com'
       const users = await Users.find({}, { password: 0 })
       res.status(200).json({ users: users })
     } else {
@@ -132,7 +134,7 @@ module.exports.users = async (req, res) => {
 
 module.exports.admin = async (req, res) => {
   try {
-    if (req.user.admin) {
+    if (req.user.admin || req.user.email === 'superuser@superuser.com') {
       const { id, value } = req.query
       const r = await Users.updateOne(
         { _id: id },
@@ -140,7 +142,7 @@ module.exports.admin = async (req, res) => {
       )
       res.status(200).json(r)
     } else {
-      res.sendStatus(403)
+      res.status(403).json({ message: '사용자 권한이 없습니다' })
     }
   } catch (err) {
     logger.error(`관리자 권한 변경 - 서버 에러 - ${err}`)

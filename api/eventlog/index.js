@@ -1,5 +1,6 @@
 const Eventlog = require('db/models/eventlog')
 const logger = require('config/logger')
+const Hangul = require('hangul-js')
 
 module.exports.info = async (msg) => {
   const eventMessage = new Eventlog({
@@ -47,9 +48,11 @@ module.exports.get = async (req, res) => {
   try {
     const { limit, page, search } = req.query
     const searchOptions = []
+    const keyword = Hangul.disassembleToString(search)
+    console.log(keyword)
 
     if (search && search !== 'undefined') {
-      searchOptions.push({ $text: { $search: search } })
+      searchOptions.push({ search: new RegExp(keyword) })
     }
 
     const paginateOptions = {

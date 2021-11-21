@@ -14,7 +14,6 @@ const eventlogSchema = new mongoose.Schema(
     timestamps: true
   }
 )
-eventlogSchema.index({ '$**': 'text' })
 eventlogSchema.plugin(mongoosePaginate)
 
 makeSearchField(eventlogSchema, 'search', (docs) => {
