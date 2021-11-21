@@ -1,6 +1,7 @@
 const logger = require('config/logger')
 const jwt = require('jsonwebtoken')
 const passport = require('passport')
+const bcrypt = require('bcrypt')
 require('dotenv').config()
 
 const Users = require('db/models/users')
@@ -207,5 +208,44 @@ module.exports.checkEmail = async (req, res) => {
     res
       .status(500)
       .json({ result: false, message: '서버 오류가 발생하였습니다' })
+  }
+}
+
+module.exports.changePassword = async (req, res) => {
+  try {
+    const { email, currentPassword, changePassword } = req.body
+    console.log(email)
+
+    const user = await Users.findOne({ email: email })
+    if (bcrypt.compareSync(currentPassword, user.password)) {
+      const r = await Users.updateOne(
+        { email: user.email },
+        { $set: { password: changePassword } }
+      )
+      if (r) {
+        logger.info(`사용자 비밀번호 변경 - 완료 - ${email}`)
+        return res.status(200).json({
+          result: r,
+          user: user.email,
+          message: '비밀번호가 변경 되었습니다'
+        })
+      } else {
+        logger.error(`사용자 비밀번호 변경 - 에러 - ${user.email}`)
+        return res
+          .status(403)
+          .json({ message: '비밀번호가 변경되지 않았습니다', user: email })
+      }
+    } else {
+      logger.warn(`사용자 비밀번호 변경 - 기존비밀번호 일치 않함 - ${email}`)
+      return res
+        .status(403)
+        .json({ message: '기존 비밀번호가 일치 하지 않습니다' })
+    }
+  } catch (err) {
+    logger.error(`사용자 비밀번호 변경 - 서버에러 - ${req.body.email} ${err}`)
+    res.status(500).json({
+      error: err,
+      message: '비밀번호가 변경되지 않았습니다. -서버에러-'
+    })
   }
 }
