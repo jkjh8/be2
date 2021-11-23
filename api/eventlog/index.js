@@ -48,11 +48,11 @@ module.exports.get = async (req, res) => {
   try {
     const { limit, page, search } = req.query
     const searchOptions = []
-    const keyword = Hangul.disassembleToString(search)
-    console.log(keyword)
 
     if (search && search !== 'undefined') {
-      searchOptions.push({ search: new RegExp(keyword) })
+      searchOptions.push({
+        search: new RegExp(Hangul.disassembleToString(search))
+      })
     }
 
     const paginateOptions = {
