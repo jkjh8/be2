@@ -80,26 +80,27 @@ module.exports.delete = async (req, res) => {
 
 module.exports.refresh = async (req, res) => {
   const { devicetype, ipaddress } = req.query
-  switch (devicetype) {
-    case 'Q-Sys':
-      await qsys.connect(ipaddress)
-      console.log('connect')
-      const rq = await qsys.send(ipaddress, {
-        id: 'status',
-        method: 'StatusGet',
-        params: 0
-      })
-      console.log('rq', rq)
-      break
-    case 'Barix':
-      const newData = await barix.get(ipaddress)
-      const r = await Devices.updateOne(
-        { ipaddress: ipaddress },
-        { $set: { detail: newData } }
-      )
-      console.log(r)
-      break
+  let r
+  try {
+    switch (devicetype) {
+      case 'Q-Sys':
+        r = await qsys.send(ipaddress, {
+          id: 'status',
+          method: 'StatusGet',
+          params: 0
+        })
+        console.log(r)
+        break
+      case 'Barix':
+        const newData = await barix.get(ipaddress)
+        const r = await Devices.updateOne(
+          { ipaddress: ipaddress },
+          { $set: { detail: newData } }
+        )
+        break
+    }
+    res.sendStatus(200)
+  } catch (e) {
+    res.status(500).json({ error: e })
   }
-
-  res.sendStatus(200)
 }

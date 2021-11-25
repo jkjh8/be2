@@ -1,28 +1,47 @@
 const net = require('net')
 
 const clients = {}
+const noOp = JSON.stringify({
+  jsonrpc: '2.0',
+  method: 'NoOp',
+  params: {}
+})
 
 const qrc = class {
   constructor(ipaddress) {
     this._ipaddress = ipaddress
     this._connected = false
-    this.finished = false
-    this.errors = []
+    this._finished = false
     this._data = ''
-    this.client = net.connect({ port: 1710, host: this._ipaddress }, () => {
-      clients[ipaddress] = this
-      this._connected = true
-      console.log('qsys connected', this._ipaddress)
-    })
+    this._noOp = null
+    this.client = net.Socket()
+
+    this.noOp = () => {
+      if (this._connected) {
+        this.client.write(noOp + '\0')
+      } else {
+        clearInterval(this._noOp)
+      }
+    }
+    this.clearNoOp = () => {
+      return new Promise((resolve, reject) => {
+        try {
+          clearInterval(this._noOp)
+          this._noOp = setInterval(this.noOp, 50000)
+          resolve()
+        } catch (e) {
+          reject(e)
+        }
+      })
+    }
+
     this.client.on('data', (data) => {
       if (data[data.length - 1] === 0x00) {
-        data = data.toString('utf8')
-        this._data += data
-        this.finished = true
+        this._data += data.toString('utf8')
+        this._finished = true
       } else {
-        this.finished = false
-        data = data.toString('utf8')
-        this._data += data
+        this._finished = false
+        this._data += data.toString('utf8')
       }
     })
     this.client.on('end', () => {
@@ -36,57 +55,79 @@ const qrc = class {
       this._connected = false
       console.log('close')
     })
-    this.client.on('timeout', () => {
-      console.log('timeout')
+  }
+
+  connect() {
+    return new Promise((resolve, reject) => {
+      try {
+        const timeout = setTimeout(() => {
+          this.client.destroy()
+          reject('connection timeout')
+        }, 5000)
+        this.client.on('connect', () => {
+          if (!clients[this._ipaddress]) {
+            clients[this._ipaddress] = this.client
+          }
+          this._connected = true
+          this._noOp = setInterval(this.noOp, 50000)
+          clearTimeout(timeout)
+          resolve(null)
+        })
+        this.client.on('end', () => {
+          clearTimeout(timeout)
+          this._connected = false
+          reject('socket ended')
+        })
+        this.client.on('error', () => {
+          clearTimeout(timeout)
+          reject('socket error')
+        })
+        this.client.connect({ port: 1710, host: this._ipaddress })
+      } catch (e) {
+        reject(e)
+      }
     })
   }
 
   send(obj) {
-    const command = JSON.stringify({
-      jsonrpc: '2.0',
-      id: `${obj.id},${this._ipaddress}`,
-      method: obj.method,
-      params: obj.params
+    return new Promise((resolve, reject) => {
+      try {
+        this._finished = false
+        const command = JSON.stringify({
+          jsonrpc: '2.0',
+          id: `${obj.id},${this._ipaddress}`,
+          method: obj.method,
+          params: obj.params
+        })
+        this._data = ''
+        this.client.write(command + '\0')
+        const interval = setInterval(() => {
+          if (this._finished) {
+            clearInterval(interval)
+            this.clearNoOp()
+            resolve(this._data)
+          }
+        })
+      } catch (e) {
+        reject(e)
+      }
     })
-    this.client.write(command + '\0')
   }
 }
 
-module.exports.qrc = qrc
-module.exports.connect = (ipaddress) => {
-  return new Promise((resolve, reject) => {
-    if (clients[ipaddress]) {
-      if (clients[ipaddress]._connected) {
-        resolve(true)
-      } else {
-        clients[ipaddress].connect()
-        while (clients[ipaddress]._connected) {
-          resolve(true)
-        }
+const send = async (ipaddress, obj) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      if (!clients[ipaddress] || !clients[ipaddress]._connected) {
+        clients[ipaddress] = new qrc(ipaddress)
+        await clients[ipaddress].connect()
       }
-    } else {
-      clients[ipaddress] = new qrc(ipaddress)
-      const interval = setInterval(() => {
-        if (clients[ipaddress]._connected) {
-          clearInterval(interval)
-          console.log('create')
-          resolve(true)
-        }
-      })
+      const r = await clients[ipaddress].send(obj)
+      resolve(JSON.parse(r))
+    } catch (e) {
+      reject(e)
     }
   })
 }
 
-module.exports.send = (ipaddress, obj) => {
-  return new Promise((resolve, reject) => {
-    clients[ipaddress].finished = false
-    clients[ipaddress].send(obj)
-    const interval = setInterval(() => {
-      if (clients[ipaddress].finished) {
-        clearInterval(interval)
-        console.log(clients[ipaddress]._data)
-        resolve(clients[ipaddress]._data)
-      }
-    })
-  })
-}
+module.exports = { qrc, send }
