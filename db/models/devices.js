@@ -21,7 +21,7 @@ const devicesSchema = new mongoose.Schema(
     search: { type: String }
   },
   {
-    timestamp: true
+    timestamps: true
   }
 )
 

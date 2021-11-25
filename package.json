@@ -7,7 +7,9 @@
   },
   "dependencies": {
     "app-module-path": "^2.2.0",
+    "axios": "^0.24.0",
     "bcrypt": "^5.0.1",
+    "cheerio": "^1.0.0-rc.10",
     "cookie-parser": "~1.4.4",
     "cors": "^2.8.5",
     "debug": "^2.6.9",
@@ -25,7 +27,10 @@
     "passport": "^0.5.0",
     "passport-jwt": "^4.0.0",
     "passport-local": "^1.0.0",
+    "pump": "^3.0.0",
     "socket.io": "^4.3.2",
+    "split2": "^4.1.0",
+    "through2": "^4.0.2",
     "winston": "^3.3.3",
     "winston-daily-rotate-file": "^4.5.5",
     "winston-mongodb": "^5.0.7"

@@ -6,5 +6,8 @@ const devices = require('api/devices')
 
 router.get('/', isLoggedIn, devices.get)
 router.post('/', isLoggedIn, devices.post)
+router.put('/', isLoggedIn, devices.put)
+router.get('/delete', isLoggedIn, devices.delete)
+router.get('/refresh', isLoggedIn, devices.refresh)
 
 module.exports = router

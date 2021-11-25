@@ -2,6 +2,8 @@ const Devices = require('db/models/devices')
 const logger = require('config/logger')
 const Hangul = require('hangul-js')
 const eventlog = require('api/eventlog')
+const barix = require('./barix')
+const qsys = require('./qsys')
 
 module.exports.get = async (req, res) => {
   try {
@@ -25,10 +27,79 @@ module.exports.get = async (req, res) => {
 }
 
 module.exports.post = async (req, res) => {
-  console.log(req.body)
-  const device = new Devices({
-    ...req.body
-  })
-  // device.save()
-  res.send('ok')
+  try {
+    const device = new Devices({
+      ...req.body
+    })
+    const r = await device.save()
+    logger.info(`디바이스 - 추가 IP: ${device.ipaddress} Name: ${device.name}`)
+    eventlog.info({
+      source: req.user.email,
+      message: `디바이스 - 추가 IP: ${device.ipaddress} Name: ${device.name}`
+    })
+    res.status(200).json(r)
+  } catch (e) {
+    logger.error(`디바이스 - 추가 에러 - IP: ${req.body.ipaddress}`)
+    res.status(500).json({ message: '디바이스 추가 중 서버 에러', error: e })
+  }
+}
+
+module.exports.put = async (req, res) => {
+  try {
+    const device = req.body
+    const r = await Devices.updateOne({ _id: device._id }, { $set: device })
+    logger.info(`디바이스 - 수정 IP: ${device.ipaddress} Name: ${device.name}`)
+    eventlog.info({
+      source: req.user.email,
+      message: `디바이스 - 수정 IP: ${device.ipaddress} Name: ${device.name}`
+    })
+    res.status(200).json(r)
+  } catch (e) {
+    logger.error(`디바이스 - 수정 에러 - IP: ${req.body.ipaddress}`)
+    res.status(500).json({ message: '디바이스 수정 중 서버 에러', error: e })
+  }
+}
+
+module.exports.delete = async (req, res) => {
+  try {
+    const user = req.user
+    const { id } = req.query
+    const device = await Devices.findOne({ _id: id })
+    const r = await Devices.deleteOne({ _id: id })
+    logger.info(`디바이스 삭제 - 완료 - IP: ${device.ipaddress}`)
+    eventlog.info({
+      source: user.email,
+      message: `디바이스 삭제 - IP: ${device.ipaddress}, Name: ${device.name}`
+    })
+    res.status(200).json(r)
+  } catch (e) {
+    logger.error(`디바이스 삭제 - 서버에러 - ${id}`)
+    res.status(500).json({ message: '디바이스 삭제 중 서버 에러', error: e })
+  }
+}
+
+module.exports.refresh = async (req, res) => {
+  const { devicetype, ipaddress } = req.query
+  switch (devicetype) {
+    case 'Q-Sys':
+      await qsys.connect(ipaddress)
+      console.log('connect')
+      const rq = await qsys.send(ipaddress, {
+        id: 'status',
+        method: 'StatusGet',
+        params: 0
+      })
+      console.log('rq', rq)
+      break
+    case 'Barix':
+      const newData = await barix.get(ipaddress)
+      const r = await Devices.updateOne(
+        { ipaddress: ipaddress },
+        { $set: { detail: newData } }
+      )
+      console.log(r)
+      break
+  }
+
+  res.sendStatus(200)
 }
