@@ -117,7 +117,6 @@ module.exports.register = async (req, res) => {
 
 module.exports.users = async (req, res) => {
   try {
-    console.log(req.user)
     if (req.user.admin || req.user.email === 'superuser@superuser.com') {
       // || req.user.email === 'jkjh82@naver.com'
       const users = await Users.find({}, { password: 0 })

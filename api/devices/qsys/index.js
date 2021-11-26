@@ -18,6 +18,7 @@ const qrc = class {
 
     this.noOp = () => {
       if (this._connected) {
+        console.log(`noOp ${this._ipaddress}`)
         this.client.write(noOp + '\0')
       } else {
         clearInterval(this._noOp)
@@ -37,7 +38,7 @@ const qrc = class {
 
     this.client.on('data', (data) => {
       if (data[data.length - 1] === 0x00) {
-        this._data += data.toString('utf8')
+        this._data += data.toString('utf8').replace('\0', '')
         this._finished = true
       } else {
         this._finished = false
@@ -46,6 +47,8 @@ const qrc = class {
     })
     this.client.on('end', () => {
       this._connected = false
+      this._finished = false
+      this._data = ''
       console.log('end')
     })
     this.client.on('error', () => {
@@ -53,6 +56,8 @@ const qrc = class {
     })
     this.client.on('close', () => {
       this._connected = false
+      this._finished = false
+      this._data = ''
       console.log('close')
     })
   }
@@ -92,7 +97,6 @@ const qrc = class {
   send(obj) {
     return new Promise((resolve, reject) => {
       try {
-        this._finished = false
         const command = JSON.stringify({
           jsonrpc: '2.0',
           id: `${obj.id},${this._ipaddress}`,
@@ -100,6 +104,7 @@ const qrc = class {
           params: obj.params
         })
         this._data = ''
+        this._finished = false
         this.client.write(command + '\0')
         const interval = setInterval(() => {
           if (this._finished) {
@@ -121,13 +126,46 @@ const send = async (ipaddress, obj) => {
       if (!clients[ipaddress] || !clients[ipaddress]._connected) {
         clients[ipaddress] = new qrc(ipaddress)
         await clients[ipaddress].connect()
+        setTimeout(async () => {
+          const r = await clients[ipaddress].send(obj)
+          resolve(JSON.parse(r))
+        }, 500)
+      } else {
+        const r = await clients[ipaddress].send(obj)
+        resolve(JSON.parse(r))
       }
-      const r = await clients[ipaddress].send(obj)
-      resolve(JSON.parse(r))
     } catch (e) {
       reject(e)
     }
   })
 }
 
-module.exports = { qrc, send }
+const getStatus = async (ipaddress) => {
+  const command = {
+    id: 'status',
+    method: 'StatusGet',
+    params: 0
+  }
+  const r = await send(ipaddress, command)
+  if (Object.keys(r).includes('result')) {
+    return r.result
+  } else {
+    return null
+  }
+}
+
+const getPA = async (ipaddress) => {
+  const command = {
+    id: 'pa',
+    method: 'Component.GetControls',
+    params: { Name: 'PA' }
+  }
+  const r = await send(ipaddress, command)
+  if (Object.keys(r).includes('result')) {
+    return r.result.Controls
+  } else {
+    return null
+  }
+}
+
+module.exports = { qrc, send, getStatus, getPA }

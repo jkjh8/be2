@@ -84,23 +84,32 @@ module.exports.refresh = async (req, res) => {
   try {
     switch (devicetype) {
       case 'Q-Sys':
-        r = await qsys.send(ipaddress, {
-          id: 'status',
-          method: 'StatusGet',
-          params: 0
-        })
-        console.log(r)
+        r = await qsys.getStatus(ipaddress)
+        await Devices.updateOne(
+          { ipoaddress: ipaddress },
+          { $set: { detail: r } }
+        )
         break
       case 'Barix':
         const newData = await barix.get(ipaddress)
-        const r = await Devices.updateOne(
+        r = await Devices.updateOne(
           { ipaddress: ipaddress },
           { $set: { detail: newData } }
         )
         break
     }
+    logger.info(
+      `디바이스 - 갱신 - ${req.query.ipaddress ?? 'None'}, ${
+        req.query.devicetype ?? 'None'
+      }`
+    )
     res.sendStatus(200)
   } catch (e) {
+    logger.error(
+      `디바이스 - 갱신 에러 - ${req.query.ipaddress ?? 'None'}, ${
+        req.query.devicetype ?? 'None'
+      }`
+    )
     res.status(500).json({ error: e })
   }
 }
