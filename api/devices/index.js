@@ -7,40 +7,28 @@ const qsys = require('./qsys')
 
 module.exports.get = async (req, res) => {
   try {
-    const { search } = req.query
-    const searchOptions = []
-
-    if (search && search !== 'undefined') {
-      searchOptions.push({
-        search: new RegExp(Hangul.disassembleToString(search))
-      })
-    }
-
-    const r = await Devices.find(
-      searchOptions.length ? { $and: searchOptions } : {}
-    )
+    const r = await Devices.find().populate('children').populate('parent')
     res.status(200).json(r)
-  } catch (err) {
-    logger.error(`디바이스 - 서버 에러 - ${err}`)
-    res.status(500).json({ error: err })
+  } catch (e) {
+    logger.error(`디바이스 - 서버 에러 - ${e.message}`)
+    res.status(500).json({ error: e.message })
   }
 }
 
 module.exports.post = async (req, res) => {
   try {
-    const device = new Devices({
+    const device = await Devices.create({
       ...req.body
     })
-    const r = await device.save()
-    logger.info(`디바이스 - 추가 IP: ${device.ipaddress} Name: ${device.name}`)
+    logger.info(`디바이스 - 추가 - ${device.ipaddress}`)
     eventlog.info({
       source: req.user.email,
-      message: `디바이스 - 추가 IP: ${device.ipaddress} Name: ${device.name}`
+      message: `디바이스 - 추가 - ${device.ipaddress}`
     })
-    res.status(200).json(r)
+    res.status(200).json(device)
   } catch (e) {
-    logger.error(`디바이스 - 추가 에러 - IP: ${req.body.ipaddress}`)
-    res.status(500).json({ message: '디바이스 추가 중 서버 에러', error: e })
+    logger.error(`디바이스 - 추가 에러 - ${e.message} ${req.body}`)
+    res.status(500).json({ message: e.message })
   }
 }
 
@@ -48,15 +36,43 @@ module.exports.put = async (req, res) => {
   try {
     const device = req.body
     const r = await Devices.updateOne({ _id: device._id }, { $set: device })
-    logger.info(`디바이스 - 수정 IP: ${device.ipaddress} Name: ${device.name}`)
+    logger.info(`디바이스 - 수정 - ${device.ipaddress}`)
     eventlog.info({
       source: req.user.email,
-      message: `디바이스 - 수정 IP: ${device.ipaddress} Name: ${device.name}`
+      message: `디바이스 - 수정 - ${device.ipaddress}`
     })
     res.status(200).json(r)
   } catch (e) {
-    logger.error(`디바이스 - 수정 에러 - IP: ${req.body.ipaddress}`)
-    res.status(500).json({ message: '디바이스 수정 중 서버 에러', error: e })
+    logger.error(`디바이스 - 수정 에러 - ${req.body.ipaddress} ${e.message}`)
+    res
+      .status(500)
+      .json({ message: '디바이스 수정 중 서버 에러', error: e.message })
+  }
+}
+
+module.exports.checkChannel = async (req, res) => {
+  try {
+    const { parent, channel } = req.query
+    const r = await Devices.find({ parent: parent, channel: channel })
+    logger.info(`디바이스 채널 확인 - ${parent} ${channel}`)
+    res.status(200).send(r.length > 0)
+  } catch (e) {
+    logger.error(`디바이스 채널 확인 - 에러 - ${e.message}`)
+    res.status(500).send(e.message)
+  }
+}
+
+module.exports.addChild = async (req, res) => {
+  try {
+    const { parent, child } = req.query
+    const device = await Devices.findById(parent)
+    device.children.push(child)
+    const r = await device.save()
+    logger.info(`디바이스 Child 추가 - ${child}`)
+    res.status(200).json(r)
+  } catch (e) {
+    logger.error(`디바이스 child 추가 에러 - ${e.message}`)
+    res.status(500).send(e.message)
   }
 }
 
@@ -66,15 +82,15 @@ module.exports.delete = async (req, res) => {
     const { id } = req.query
     const device = await Devices.findOne({ _id: id })
     const r = await Devices.deleteOne({ _id: id })
-    logger.info(`디바이스 삭제 - 완료 - IP: ${device.ipaddress}`)
+    logger.info(`디바이스 삭제 - 완료 - ${device.ipaddress}`)
     eventlog.info({
       source: user.email,
-      message: `디바이스 삭제 - IP: ${device.ipaddress}, Name: ${device.name}`
+      message: `디바이스 삭제 - ${device.ipaddress},`
     })
     res.status(200).json(r)
   } catch (e) {
-    logger.error(`디바이스 삭제 - 서버에러 - ${id}`)
-    res.status(500).json({ message: '디바이스 삭제 중 서버 에러', error: e })
+    logger.error(`디바이스 삭제 - 서버에러 - ${e.message}}`)
+    res.status(500).json({ message: e.message })
   }
 }
 
