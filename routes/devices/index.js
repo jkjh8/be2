@@ -10,7 +10,10 @@ router.put('/', isLoggedIn, devices.put)
 router.get('/delete', isLoggedIn, devices.delete)
 
 router.get('/checkChannel', isLoggedIn, devices.checkChannel)
+router.post('/checkChild', isLoggedIn, devices.checkChild)
 router.get('/addChild', isLoggedIn, devices.addChild)
+router.put('/updateMasterChannel', isLoggedIn, devices.updateMasterChannel)
+router.put('/updateChildChannel', isLoggedIn, devices.updateChildChannel)
 
 router.get('/refresh', isLoggedIn, devices.refresh)
 

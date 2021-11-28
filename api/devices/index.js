@@ -36,12 +36,13 @@ module.exports.put = async (req, res) => {
   try {
     const device = req.body
     const r = await Devices.updateOne({ _id: device._id }, { $set: device })
+    const rtDevice = await Devices.findOne({ _id: device._id })
     logger.info(`디바이스 - 수정 - ${device.ipaddress}`)
     eventlog.info({
       source: req.user.email,
       message: `디바이스 - 수정 - ${device.ipaddress}`
     })
-    res.status(200).json(r)
+    res.status(200).json(rtDevice)
   } catch (e) {
     logger.error(`디바이스 - 수정 에러 - ${req.body.ipaddress} ${e.message}`)
     res
@@ -52,12 +53,71 @@ module.exports.put = async (req, res) => {
 
 module.exports.checkChannel = async (req, res) => {
   try {
-    const { parent, channel } = req.query
-    const r = await Devices.find({ parent: parent, channel: channel })
-    logger.info(`디바이스 채널 확인 - ${parent} ${channel}`)
-    res.status(200).send(r.length > 0)
+    const { parent, child, channel } = req.query
+    console.log(parent, child, channel)
+    const r = await Devices.findOne({ _id: parent }).populate('children')
+    r.children.forEach((item) => {
+      console.log(item)
+      if (item.channel === channel) {
+        if (String(item._id) === child) {
+          logger.info(`디바이스 채널 확인 - 확인 - ${parent} ${channel}`)
+          return res.status(200).send(null)
+        } else {
+          logger.info(`디바이스 채널 확인 - 중복 - ${parent} ${channel}`)
+          return res.status(200).send(true)
+        }
+      }
+      logger.info(`디바이스 채널 확인 - 확인 - ${parent} ${channel}`)
+      res.status(200).send(null)
+    })
   } catch (e) {
     logger.error(`디바이스 채널 확인 - 에러 - ${e.message}`)
+    res.status(500).send(e.message)
+  }
+}
+
+// 큐시스 업데트 로직 추가 필요
+module.exports.updateMasterChannel = async (req, res) => {
+  try {
+    const { id, channels } = req.body
+    const r = await Devices.updateOne(
+      { _id: id },
+      { $set: { children: channels } }
+    )
+    logger.info(`마스터 채널 업데이트 - ID: ${id}, Channles: ${channels}`)
+    res.status(200).json(r)
+  } catch (e) {
+    logger.error(`마스터 채널 업데이트- 에러 - ${e.message}`)
+    res.status(500).send(e.message)
+  }
+}
+
+module.exports.updateChildChannel = async (req, res) => {
+  try {
+    const { id, channel, parent } = req.body
+    const r = await Devices.updateOne(
+      { _id: id },
+      { $set: { channel: channel, parent: parent } }
+    )
+    res.status(200).json(r)
+  } catch (e) {
+    logger.error(`슬레이브 채널 업데이트 - 에러 - ${e.message}`)
+  }
+}
+
+module.exports.checkChild = async (req, res) => {
+  try {
+    const { parent, channels } = req.body
+    console.log(parent, channels)
+    const r = await Devices.find({
+      $and: [{ _id: { $ne: parent } }, { children: { $all: channels } }]
+    })
+    if (r && r.length) {
+      logger.warn(`지역 중복체크 - 중복 - ${r.map((e) => e.name)}`)
+    }
+    res.status(200).send(r.map((e) => e.name))
+  } catch (e) {
+    logger.error(`지역 중복 체크 에러 - ${e.message}`)
     res.status(500).send(e.message)
   }
 }
