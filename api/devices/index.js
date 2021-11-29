@@ -56,27 +56,22 @@ module.exports.checkChannel = async (req, res) => {
     const { parent, child, channel } = req.query
     console.log(parent, child, channel)
     const r = await Devices.findOne({ _id: parent }).populate('children')
-    r.children.forEach((item) => {
-      console.log(item)
-      if (item.channel === channel) {
-        if (String(item._id) === child) {
-          logger.info(`디바이스 채널 확인 - 확인 - ${parent} ${channel}`)
-          return res.status(200).send(null)
-        } else {
+    for (let i = 0; i < r.children.length; i++) {
+      if (r.children[i].channel == channel) {
+        if (String(r.children[i]._id) !== child) {
           logger.info(`디바이스 채널 확인 - 중복 - ${parent} ${channel}`)
           return res.status(200).send(true)
         }
       }
-      logger.info(`디바이스 채널 확인 - 확인 - ${parent} ${channel}`)
-      res.status(200).send(null)
-    })
+    }
+    logger.info(`디바이스 채널 확인 - 확인 - ${parent} ${channel}`)
+    res.status(200).send(null)
   } catch (e) {
     logger.error(`디바이스 채널 확인 - 에러 - ${e.message}`)
     res.status(500).send(e.message)
   }
 }
 
-// 큐시스 업데트 로직 추가 필요
 module.exports.updateMasterChannel = async (req, res) => {
   try {
     const { id, channels } = req.body
@@ -85,6 +80,7 @@ module.exports.updateMasterChannel = async (req, res) => {
       { $set: { children: channels } }
     )
     logger.info(`마스터 채널 업데이트 - ID: ${id}, Channles: ${channels}`)
+    // qsys 채널 갱신 추가
     res.status(200).json(r)
   } catch (e) {
     logger.error(`마스터 채널 업데이트- 에러 - ${e.message}`)
@@ -115,7 +111,7 @@ module.exports.checkChild = async (req, res) => {
     if (r && r.length) {
       logger.warn(`지역 중복체크 - 중복 - ${r.map((e) => e.name)}`)
     }
-    res.status(200).send(r.map((e) => e.name))
+    res.status(200).send(null)
   } catch (e) {
     logger.error(`지역 중복 체크 에러 - ${e.message}`)
     res.status(500).send(e.message)
@@ -125,9 +121,19 @@ module.exports.checkChild = async (req, res) => {
 module.exports.addChild = async (req, res) => {
   try {
     const { parent, child } = req.query
+    // 중복삭제
+    const dup = await Devices.find({ children: { $all: [child] } })
+    dup.forEach(async (item) => {
+      const children = item.children.filter((e) => String(e) !== child)
+      item.children = children
+      await item.save()
+    })
+    // 방송구간추가
     const device = await Devices.findById(parent)
     device.children.push(child)
     const r = await device.save()
+
+    // qsys 채널 갱신 추가
     logger.info(`디바이스 Child 추가 - ${child}`)
     res.status(200).json(r)
   } catch (e) {
