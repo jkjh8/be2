@@ -37,6 +37,7 @@ const devicesSchema = new mongoose.Schema(
     ],
     mute: [{ type: Boolean }],
     active: [{ type: Boolean }],
+    activeCount: { type: Number, default: 0 },
     status: {
       type: Boolean,
       default: false,
