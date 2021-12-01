@@ -169,14 +169,14 @@ module.exports.refresh = async (req, res) => {
         r = await qsys.getStatus(ipaddress)
         await Devices.updateOne(
           { ipoaddress: ipaddress },
-          { $set: { detail: r } }
+          { $set: { detail: r, status: true } }
         )
         break
       case 'Barix':
         const newData = await barix.get(ipaddress)
         r = await Devices.updateOne(
           { ipaddress: ipaddress },
-          { $set: { detail: newData } }
+          { $set: { detail: newData, status: true } }
         )
         break
     }
@@ -187,6 +187,10 @@ module.exports.refresh = async (req, res) => {
     )
     res.sendStatus(200)
   } catch (e) {
+    await Devices.updateOne(
+      { ipaddress: req.query.ipaddress },
+      { $set: { status: false } }
+    )
     logger.error(
       `디바이스 - 갱신 에러 - ${req.query.ipaddress ?? 'None'}, ${
         req.query.devicetype ?? 'None'
