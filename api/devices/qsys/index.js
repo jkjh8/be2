@@ -142,7 +142,7 @@ const send = async (ipaddress, obj) => {
 
 const getStatus = async (ipaddress) => {
   const command = {
-    id: 'status',
+    id: `status,${ipaddress}`,
     method: 'StatusGet',
     params: 0
   }
@@ -156,7 +156,7 @@ const getStatus = async (ipaddress) => {
 
 const getPA = async (ipaddress) => {
   const command = {
-    id: 'pa',
+    id: `pa,${ipaddress}`,
     method: 'Component.GetControls',
     params: { Name: 'PA' }
   }
@@ -168,4 +168,33 @@ const getPA = async (ipaddress) => {
   }
 }
 
-module.exports = { qrc, send, getStatus, getPA }
+const setVolume = async (value) => {
+  const { volume, mute, channel, device } = value
+
+  if (device.devicetype === 'Q-Sys') {
+    const command = {
+      id: `vol,${device.ipaddress}`,
+      method: 'Component.Set',
+      params: {
+        Name: 'PA',
+        Controls: []
+      }
+    }
+    if (volume !== null && volume !== 'undefined') {
+      command.params.Controls.push({
+        Name: `zone.${channel}.gain`,
+        Value: volume
+      })
+    }
+    if (mute !== null && mute !== 'undefined') {
+      command.params.Controls.push({
+        Name: `zone.${channel}.mute`,
+        Value: mute
+      })
+    }
+    const r = await send(device.ipaddress, command)
+    return r
+  }
+}
+
+module.exports = { qrc, send, getStatus, getPA, setVolume }
