@@ -182,12 +182,23 @@ exports.upload = async (req, res) => {
   } catch (err) {
     const uploadedfile = path.join(folder, file.name)
     logger.error(
-      `파일 업로드 - 서버 에러 - path: ${uploadedfile} error: ${err}`
+      `파일 업로드 - 서버 에러 - user: ${req.user.email} path: ${uploadedfile} error: ${err}`
     )
     eventlog.error({
       source: req.user.email,
       message: `파일 업로드 - 서버 에러 - path: ${uploadedfile} error: ${err}`
     })
     res.status(500).json({ error: err })
+  }
+}
+
+exports.download = async (req, res) => {
+  try {
+    const { fullpath, name } = req.body
+    console.log(req.body)
+    res.download(path.join(fullpath, name), name)
+  } catch (e) {
+    logger.error(`파일 다운로드 - 서버 에러 - ${e.message}`)
+    res.status(500).send(e.message)
   }
 }

@@ -8,5 +8,6 @@ router.post('/get', isLoggedIn, files.get)
 router.post('/createFolder', isLoggedIn, files.createFolder)
 router.post('/delete', isLoggedIn, files.delete)
 router.post('/upload', isLoggedIn, files.upload)
+router.post('/download', isLoggedIn, files.download)
 
 module.exports = router
