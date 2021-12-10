@@ -2,6 +2,7 @@ const fs = require('fs')
 const path = require('path')
 const logger = require('config/logger')
 const eventlog = require('api/eventlog')
+const dirTree = require('async-directory-tree')
 
 exports.get = async (req, res) => {
   const { folder } = req.body
@@ -59,6 +60,39 @@ exports.get = async (req, res) => {
             size: fs.statSync(path.join(currentPath, files[i].name)).size
           })
         }
+      }
+    }
+    res.status(200).json({ files: rt, path: folder })
+  } catch (err) {
+    logger.error(`파일 읽기 - 서버 에러 ${err}`)
+    res.status(500).json({ error: err, message: '폴더를 읽을 수 없습니다' })
+  }
+}
+
+exports.getFolder = async (req, res) => {
+  const { folder } = req.body
+  let remotePath
+  let currentPath
+  if (folder && folder.length && folder !== 'undefined') {
+    remotePath = folder.join('/')
+    currentPath = path.join(filesPath, remotePath)
+  } else {
+    remotePath = ''
+    currentPath = path.join(filesPath)
+  }
+
+  try {
+    const rt = []
+    const files = await fs.readdirSync(currentPath, { withFileTypes: true })
+    for (let i = 0; i < files.length; i++) {
+      if (files[i].isDirectory()) {
+        rt.push({
+          index: i,
+          type: 'directory',
+          base: remotePath,
+          fullpath: currentPath,
+          name: files[i].name
+        })
       }
     }
     res.status(200).json({ files: rt, path: folder })
@@ -195,10 +229,15 @@ exports.upload = async (req, res) => {
 exports.download = async (req, res) => {
   try {
     const { fullpath, name } = req.body
-    console.log(req.body)
     res.download(path.join(fullpath, name), name)
   } catch (e) {
     logger.error(`파일 다운로드 - 서버 에러 - ${e.message}`)
     res.status(500).send(e.message)
   }
+}
+
+exports.getTree = async (req, res) => {
+  const tree = await dirTree(filesPath, {})
+  console.log(tree)
+  res.status(200).json(tree)
 }

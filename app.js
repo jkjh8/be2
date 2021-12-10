@@ -63,6 +63,7 @@ function makeFolder(folder) {
   }
 }
 global.filesPath = path.join(__dirname, 'files')
+global.tempPath = path.join(__dirname, 'files', 'temp')
 makeFolder(filesPath)
 makeFolder(path.join(filesPath, 'media'))
 makeFolder(path.join(filesPath, 'schedule'))
