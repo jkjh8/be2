@@ -5,7 +5,7 @@ const { isLoggedIn } = require('api/users/checkLoggedIn')
 const files = require('api/files')
 
 router.post('/get', isLoggedIn, files.get)
-router.post('getFolder', isLoggedIn, files.getFolder)
+router.post('/getFolder', isLoggedIn, files.getFolder)
 router.post('/createFolder', isLoggedIn, files.createFolder)
 router.post('/delete', isLoggedIn, files.delete)
 router.post('/upload', isLoggedIn, files.upload)
