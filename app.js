@@ -63,12 +63,12 @@ function makeFolder(folder) {
   }
 }
 global.filesPath = path.join(__dirname, 'files')
-global.tempPath = path.join(__dirname, 'files', 'temp')
+global.tempPath = path.join(__dirname, 'files', 'Temp')
 makeFolder(filesPath)
-makeFolder(path.join(filesPath, 'media'))
-makeFolder(path.join(filesPath, 'schedule'))
-makeFolder(path.join(filesPath, 'temp'))
+makeFolder(path.join(filesPath, 'Media'))
+makeFolder(path.join(filesPath, 'Schedule'))
+makeFolder(path.join(filesPath, 'Temp'))
 
 app.use('/files', express.static(filesPath))
-app.use('/media', express.static(path.join(filesPath, 'media')))
+app.use('/media', express.static(path.join(filesPath, 'Media')))
 module.exports = app

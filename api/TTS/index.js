@@ -28,7 +28,6 @@ exports.getInfo = async (req, res) => {
 exports.preview = async (req, res) => {
   const { name, voice, rate, message } = req.body
   const filename = `${uuidv4()}`
-  console.log(path.join(filesPath, 'temp'))
   const options = {
     mode: 'json',
     pythonPath: '',
@@ -37,7 +36,7 @@ exports.preview = async (req, res) => {
     args: [
       'make_file',
       message,
-      path.join(filesPath, 'temp'),
+      path.join(filesPath, 'Temp'),
       filename,
       rate,
       voice.id
@@ -48,6 +47,6 @@ exports.preview = async (req, res) => {
       logger.error(`TTS에서 - TTS합성에러 -${err}`)
       res.status(500).send(err)
     }
-    res.status(200).json({ ...result[0], base: 'temp' })
+    res.status(200).json({ ...result[0], base: 'Temp' })
   })
 }
