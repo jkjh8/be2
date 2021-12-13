@@ -27,7 +27,7 @@ exports.getInfo = async (req, res) => {
 
 exports.preview = async (req, res) => {
   const { name, voice, rate, message } = req.body
-  const filename = `${uuidv4()}`
+  const filename = `${uuidv4()}.mp3`
   const options = {
     mode: 'json',
     pythonPath: '',
@@ -48,5 +48,40 @@ exports.preview = async (req, res) => {
       res.status(500).send(err)
     }
     res.status(200).json({ ...result[0], base: 'Temp' })
+  })
+}
+
+exports.makeFile = async (req, res) => {
+  const { name, voice, rate, message, folder } = req.body
+  let filename
+  if (name && name !== 'undefined') {
+    filename = `${name}.mp3`
+  } else {
+    filename = `${uuidv4()}.mp3`
+  }
+  console.log(filename)
+
+  const options = {
+    mode: 'json',
+    pythonPath: '',
+    pythonOptions: ['-u'],
+    scriptPath: __dirname,
+    args: [
+      'make_file',
+      message,
+      path.join(filesPath, folder.base, folder.name),
+      filename,
+      rate,
+      voice.id
+    ]
+  }
+  PythonShell.run('tts.py', options, (err, result) => {
+    if (err) {
+      logger.error(`TTS에서 - TTS합성에러 -${err}`)
+      res.status(500).send(err)
+    }
+    res
+      .status(200)
+      .json({ ...result[0], base: path.join(folder.base, folder.name) })
   })
 }

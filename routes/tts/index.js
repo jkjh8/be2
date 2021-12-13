@@ -5,5 +5,6 @@ const tts = require('api/TTS')
 
 router.get('/', isLoggedIn, tts.getInfo)
 router.post('/preview', isLoggedIn, tts.preview)
+router.post('/makeFile', isLoggedIn, tts.makeFile)
 
 module.exports = router

@@ -16,8 +16,6 @@ exports.get = async (req, res) => {
     currentPath = path.join(filesPath)
   }
 
-  console.log(folder, currentPath)
-
   try {
     const rt = []
     const files = await fs.readdirSync(currentPath, { withFileTypes: true })
@@ -113,9 +111,9 @@ module.exports.createFolder = async (req, res) => {
       if (fs.existsSync(target)) {
         eventlog.warning({
           source: email,
-          message: `폴더 생성 - 중복 폴더 Path: ${targert}`
+          message: `폴더 생성 - 중복 폴더 Path: ${target}`
         })
-        logger.warning(`폴더 생성 - 중복 폴더 - User:${email}  Path: ${target}`)
+        logger.warn(`폴더 생성 - 중복 폴더 - User:${email}  Path: ${target}`)
         res.status(500).json({ error: null, message: '중복 폴더' })
       } else {
         fs.mkdirSync(target)
@@ -193,20 +191,21 @@ exports.upload = async (req, res) => {
     const { folder } = req.body
     const { file } = req.files
     const uploadedfile = path.join(folder, file.name)
-    if (!file || Object.keys(file).length === 0) {
-      logger.error(`파일 업로드 - 파일없음`)
-      return res.status(400).json({ message: '파일없음' })
-    }
     const currentPath = path.join(filesPath, folder, file.name)
+
     file.mv(currentPath, function (err) {
       if (err) {
-        logger.error(`파일 업로드 - 에러 - path: ${uploadedfile} error: ${err}`)
+        logger.error(
+          `파일 업로드 - 에러 - user: ${req.user.email} path: ${uploadedfile} error: ${err}`
+        )
         eventlog.error({
           source: req.user.email,
           message: `파일 업로드 - 에러 - path: ${uploadedfile} error: ${err}`
         })
       }
-      logger.info(`파일 업로드 - 완료 - path: ${uploadedfile}`)
+      logger.info(
+        `파일 업로드 - 완료 - user: ${req.user.email} path: ${uploadedfile}`
+      )
       eventlog.info({
         source: req.user.email,
         message: `파일 업로드 - 완료 - path:${uploadedfile}`
@@ -220,7 +219,7 @@ exports.upload = async (req, res) => {
     )
     eventlog.error({
       source: req.user.email,
-      message: `파일 업로드 - 서버 에러 - path: ${uploadedfile} error: ${err}`
+      message: `파일 업로드 - 서버 에러 - user: ${req.user.email}path: ${uploadedfile} error: ${err}`
     })
     res.status(500).json({ error: err })
   }
@@ -229,9 +228,14 @@ exports.upload = async (req, res) => {
 exports.download = async (req, res) => {
   try {
     const { fullpath, name } = req.body
+    logger.info(
+      `파일 다운로드 - 완료 - user: ${req.user.email} file:${(fullpath, name)}`
+    )
     res.download(path.join(fullpath, name), name)
   } catch (e) {
-    logger.error(`파일 다운로드 - 서버 에러 - ${e.message}`)
+    logger.error(
+      `파일 다운로드 - 서버 에러 - user: ${req.user.email} error: ${e.message}`
+    )
     res.status(500).send(e.message)
   }
 }
@@ -240,4 +244,37 @@ exports.getTree = async (req, res) => {
   const tree = await dirTree(filesPath, {})
   console.log(tree)
   res.status(200).json(tree)
+}
+
+exports.check = async (req, res) => {
+  const { folder, name } = req.query
+  console.log(folder, name)
+  try {
+    const currentPath = path.join(filesPath, folder, name)
+    console.log(currentPath)
+
+    if (fs.existsSync(currentPath)) {
+      logger.warn(
+        `파일 업로드 - 파일중복 - user: ${req.user.email} path: ${currentPath}`
+      )
+      eventlog.warning({
+        source: req.user.email,
+        message: `파일 업로드 - 파일중복 - path: ${currentPath}`
+      })
+      res.status(409).send('중복파일')
+    } else {
+      res.sendStatus(200)
+    }
+  } catch (e) {
+    logger.error(
+      `파일 업로드 - 중복확인 서버에러 - user: ${req.user.email} error: ${e.message}`
+    )
+    eventlog.error({
+      source: req.user.email,
+      message: `파일 업로드 - 중복확인 서버에러 - user: ${req.user.email} error: ${e.message}`
+    })
+    res
+      .status(500)
+      .send('서버 에러가 발생하였습니다. 잠시후에 다시 시도해주세요.')
+  }
 }

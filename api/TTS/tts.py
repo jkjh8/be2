@@ -11,13 +11,13 @@ def make_file(command):
         rate = command[5]
         voice = command[6]
         # fileWav = filepath + '/' + filename + '.wav'
-        fileMp3 = filepath + '/' + filename + '.mp3'
+        fileMp3 = filepath + '/' + filename
 
         engine.setProperty('rate', int(rate))
         engine.setProperty('voice', voice)
         engine.save_to_file(text, fileMp3)
         engine.runAndWait()
-        print(json.dumps({"error": None,"file":fileMp3,"name":filename+'.mp3',"type":"audio","rate":rate}))
+        print(json.dumps({"error": None,"file":fileMp3,"name":filename,"type":"audio","rate":rate}))
         sys.exit()
     except Exception as e:
         print(json.dumps({"error":e}))
