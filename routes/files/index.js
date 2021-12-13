@@ -11,5 +11,6 @@ router.post('/delete', isLoggedIn, files.delete)
 router.post('/upload', isLoggedIn, files.upload)
 router.post('/download', isLoggedIn, files.download)
 router.get('/getTree', isLoggedIn, files.getTree)
+router.get('/check', isLoggedIn, files.check)
 
 module.exports = router
