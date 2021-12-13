@@ -8,6 +8,7 @@ const devicesSchema = new mongoose.Schema(
     devicetype: String,
     detail: Object,
     mode: String,
+    pageid: Number,
     channels: {
       type: Number,
       min: 1,
