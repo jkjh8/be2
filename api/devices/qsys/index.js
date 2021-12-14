@@ -197,4 +197,37 @@ const setVolume = async (value) => {
   }
 }
 
-module.exports = { qrc, send, getStatus, getPA, setVolume }
+const onair = async (args) => {
+  const { name, ipaddress, channels } = args
+  const command = {
+    jsonrpc: '2.0',
+    id: `onair, ${ipaddress}`,
+    method: 'PA.PageSubmit',
+    params: {
+      Zones: channels,
+      Description: name,
+      Mode: 'live',
+      Station: 1,
+      Priority: 3,
+      Start: true
+    }
+  }
+  const r = await send(ipaddress, command)
+  return r
+}
+
+const offair = async (args) => {
+  const { ipaddress, pageid } = args
+  const command = {
+    jsonrpc: '2.0',
+    id: `offair,${ipaddress}`,
+    method: 'PA.PageStop',
+    params: {
+      PageID: pageid
+    }
+  }
+  const r = await send(ipaddress, command)
+  return r
+}
+
+module.exports = { qrc, send, getStatus, getPA, setVolume, onair, offair }

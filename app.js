@@ -29,6 +29,7 @@ app.use(
 app.db = require('./db')
 // socket.io 생성
 app.io = require('socket.io')()
+require('api/socketio')(app)
 // mulcast server 생성
 app.multicastAddress = '230.185.192.12'
 app.multicastPort = 12340

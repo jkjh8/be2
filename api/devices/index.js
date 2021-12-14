@@ -1,6 +1,5 @@
 const Devices = require('db/models/devices')
 const logger = require('config/logger')
-const Hangul = require('hangul-js')
 const eventlog = require('api/eventlog')
 const barix = require('./barix')
 const qsys = require('./qsys')
