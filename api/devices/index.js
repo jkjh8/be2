@@ -207,37 +207,11 @@ module.exports.refreshPa = async (req, res) => {
   try {
     const { ipaddress } = req.query
     const r = await qsys.getPA(ipaddress)
-    await updatePA(ipaddress, r)
+    await qsys.updatePA(ipaddress, r)
     res.sendStatus(200)
   } catch (e) {
     logger.error(`디바이스 PA - 에러 - ${e}`)
     res.status(500).send(e)
-  }
-}
-
-async function updatePA(ipaddress, arr) {
-  const gain = []
-  const mute = []
-  const active = []
-  try {
-    for (let i = 0; i < arr.length; i++) {
-      if (arr[i].Name.match(/zone.\d+.gain/)) {
-        const channel = arr[i].Name.replace(/[^0-9]/g, '')
-        gain[channel - 1] = arr[i].Value
-      } else if (arr[i].Name.match(/zone.\d+.mute/)) {
-        const channel = arr[i].Name.replace(/[^0-9]/g, '')
-        mute[channel - 1] = arr[i].Value
-      } else if (arr[i].Name.match(/zone.\d+.active/)) {
-        const channel = arr[i].Name.replace(/[^0-9]/g, '')
-        active[channel - 1] = arr[i].Value
-      }
-    }
-    return await Devices.updateOne(
-      { ipaddress: ipaddress },
-      { $set: { gain, mute, active, status: true } }
-    )
-  } catch (e) {
-    return e
   }
 }
 
@@ -256,6 +230,22 @@ module.exports.volume = async (req, res) => {
     }
   } catch (e) {
     logger.error(`디바이스 - 볼륨 에러 - ${e.message}`)
+    res.sendStatus(500)
+  }
+}
+
+module.exports.cancelAll = async (req, res) => {
+  try {
+    const { ipaddress, user } = req.query
+    const r = await qsys.cancelAll(ipaddress, user)
+    logger.warn(`방송강제취소 - user: ${user}, IP: ${ipaddress}`)
+    eventlog.warning({
+      source: req.user.email,
+      message: `방송강제취소 - ${ipaddress}`
+    })
+    res.sendStatus(200)
+  } catch (e) {
+    logger.error(`방송강제취소 - 에러 ${req.query}`)
     res.sendStatus(500)
   }
 }

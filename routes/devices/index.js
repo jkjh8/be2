@@ -17,6 +17,7 @@ router.put('/updateChildChannel', isLoggedIn, devices.updateChildChannel)
 
 router.get('/refresh', isLoggedIn, devices.refresh)
 router.get('/refreshPa', isLoggedIn, devices.refreshPa)
+router.get('/cancelAll', isLoggedIn, devices.cancelAll)
 router.put('/volume', isLoggedIn, devices.volume)
 
 module.exports = router

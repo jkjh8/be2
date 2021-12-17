@@ -1,15 +1,60 @@
 const Devices = require('db/models/devices')
 const qsys = require('api/devices/qsys')
 
+const refreshPa = (args) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const { ipaddress, channels, children } = args
+      const r = await qsys.getPA(ipaddress)
+      const { active } = await qsys.updatePA(ipaddress, r)
+      const dup = []
+
+      for (let i = 0; i < channels.length; i++) {
+        if (active[channels[i] - 1]) {
+          dup.push({
+            name: children[channels[i] - 1].name,
+            channel: channels[i]
+          })
+        }
+      }
+      resolve(dup)
+    } catch (e) {
+      reject(e)
+    }
+  })
+}
+
+exports.check = async (command) => {
+  return new Promise(async (resolve, reject) => {
+    const { nodes } = command
+    const dup = []
+    try {
+      for (let i = 0; i < nodes.length; i++) {
+        const r = await refreshPa(nodes[i])
+        if (r && r.length) {
+          dup.push({
+            name: nodes[i].name,
+            dup: r
+          })
+        }
+      }
+      resolve(dup)
+    } catch (e) {
+      reject(e)
+    }
+  })
+}
+
 exports.onair = async (command, app) => {
-  return new Promise((resolve, reject) => {
+  return new Promise(async (resolve, reject) => {
+    const { name, nodes } = command
     const broadcastzones = []
 
     try {
-      command.nodes.forEach(async (item) => {
+      nodes.forEach(async (item) => {
         const r = await qsys.onair({
           ...item,
-          name: command.name
+          name: name
         })
         const device = await Devices.findOneAndUpdate(
           { ipaddress: item.ipaddress },
@@ -24,7 +69,7 @@ exports.onair = async (command, app) => {
 
         app.io.emit('page_message', `${device.name} 방송 기동 완료`)
 
-        if (command.nodes.length === broadcastzones.length) {
+        if (nodes.length === broadcastzones.length) {
           resolve(broadcastzones)
         }
       })

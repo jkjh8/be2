@@ -10,6 +10,9 @@ module.exports.info = async (msg) => {
   if (msg.source) {
     eventMessage.source = msg.source
   }
+  if (msg.id) {
+    eventMessage.id = msg.id
+  }
   if (msg.zones && msg.zones.length) {
     eventMessage.zones = msg.zones
   }
@@ -24,6 +27,9 @@ module.exports.warning = async (msg) => {
   if (msg.source) {
     eventMessage.source = msg.source
   }
+  if (msg.id) {
+    eventMessage.id = msg.id
+  }
   if (msg.zones && msg.zones.length) {
     eventMessage.zones = msg.zones
   }
@@ -37,6 +43,9 @@ module.exports.error = async (msg) => {
   })
   if (msg.source) {
     eventMessage.source = msg.source
+  }
+  if (msg.id) {
+    eventMessage.id = msg.id
   }
   if (msg.zones && msg.zones.length) {
     eventMessage.zones = msg.zones

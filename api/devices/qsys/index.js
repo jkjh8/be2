@@ -1,4 +1,5 @@
 const net = require('net')
+const Devices = require('db/models/devices')
 
 const clients = {}
 const noOp = JSON.stringify({
@@ -12,7 +13,9 @@ const qrc = class {
     this._ipaddress = ipaddress
     this._connected = false
     this._finished = false
+    this._status = false
     this._data = ''
+    this._dataJson = null
     this._noOp = null
     this.client = net.Socket()
 
@@ -36,11 +39,14 @@ const qrc = class {
       })
     }
 
-    this.client.on('data', (data) => {
+    this.client.on('data', async (data) => {
       if (data[data.length - 1] === 0x00) {
         this._data += data.toString('utf8').replace('\0', '')
         this._finished = true
       } else {
+        if (this._finished) {
+          this._data = ''
+        }
         this._finished = false
         this._data += data.toString('utf8')
       }
@@ -132,7 +138,8 @@ const send = async (ipaddress, obj) => {
         }, 500)
       } else {
         const r = await clients[ipaddress].send(obj)
-        resolve(JSON.parse(r))
+        const result = JSON.parse(r)
+        resolve(result)
       }
     } catch (e) {
       reject(e)
@@ -155,16 +162,49 @@ const getStatus = async (ipaddress) => {
 }
 
 const getPA = async (ipaddress) => {
-  const command = {
-    id: `pa,${ipaddress}`,
-    method: 'Component.GetControls',
-    params: { Name: 'PA' }
-  }
-  const r = await send(ipaddress, command)
-  if (Object.keys(r).includes('result')) {
-    return r.result.Controls
-  } else {
-    return null
+  return new Promise(async (resolve, reject) => {
+    try {
+      const command = {
+        id: `pa,${ipaddress}`,
+        method: 'Component.GetControls',
+        params: { Name: 'PA' }
+      }
+      const r = await send(ipaddress, command)
+      if (Object.keys(r).includes('result')) {
+        resolve(r.result.Controls)
+      } else {
+        resolve(null)
+      }
+    } catch (e) {
+      reject(e)
+    }
+  })
+}
+
+async function updatePA(ipaddress, arr) {
+  const gain = []
+  const mute = []
+  const active = []
+  try {
+    for (let i = 0; i < arr.length; i++) {
+      if (arr[i].Name.match(/zone.\d+.gain/)) {
+        const channel = arr[i].Name.replace(/[^0-9]/g, '')
+        gain[channel - 1] = arr[i].Value
+      } else if (arr[i].Name.match(/zone.\d+.mute/)) {
+        const channel = arr[i].Name.replace(/[^0-9]/g, '')
+        mute[channel - 1] = arr[i].Value
+      } else if (arr[i].Name.match(/zone.\d+.active/)) {
+        const channel = arr[i].Name.replace(/[^0-9]/g, '')
+        active[channel - 1] = arr[i].Value
+      }
+    }
+    await Devices.updateOne(
+      { ipaddress: ipaddress },
+      { $set: { gain, mute, active, status: true } }
+    )
+    return { gain, mute, active }
+  } catch (e) {
+    return e
   }
 }
 
@@ -201,7 +241,7 @@ const onair = async (args) => {
   const { name, ipaddress, channels } = args
   const command = {
     jsonrpc: '2.0',
-    id: `onair, ${ipaddress}`,
+    id: `onair`,
     method: 'PA.PageSubmit',
     params: {
       Zones: channels,
@@ -220,7 +260,7 @@ const offair = async (args) => {
   const { ipaddress, pageid } = args
   const command = {
     jsonrpc: '2.0',
-    id: `offair,${ipaddress}`,
+    id: `offair`,
     method: 'PA.PageStop',
     params: {
       PageID: pageid
@@ -230,4 +270,33 @@ const offair = async (args) => {
   return r
 }
 
-module.exports = { qrc, send, getStatus, getPA, setVolume, onair, offair }
+const cancelAll = async (ipaddress) => {
+  const command = {
+    jsonrpc: '2.0',
+    id: 'cancelall',
+    method: 'Component.Set',
+    params: {
+      Name: 'PA',
+      Controls: [
+        {
+          Name: 'cancel.all.commands',
+          Value: 1
+        }
+      ]
+    }
+  }
+  const r = await send(ipaddress, command)
+  return r
+}
+
+module.exports = {
+  qrc,
+  send,
+  getStatus,
+  getPA,
+  setVolume,
+  onair,
+  offair,
+  updatePA,
+  cancelAll
+}

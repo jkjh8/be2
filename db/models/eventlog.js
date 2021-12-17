@@ -6,6 +6,7 @@ const eventlogSchema = new mongoose.Schema(
   {
     source: { type: String },
     priority: { type: String, require: true, default: 'info' },
+    id: { type: String },
     zones: { type: Array },
     message: { type: String },
     search: { type: String }
@@ -18,7 +19,8 @@ eventlogSchema.plugin(mongoosePaginate)
 
 makeSearchField(eventlogSchema, 'search', (docs) => {
   const arr = []
-  const { source = '', zones = [], message = '' } = docs
+  const { id = '', source = '', zones = [], message = '' } = docs
+  arr.push(id)
   arr.push(source)
   arr.push(zones.join(','))
   arr.push(message)
