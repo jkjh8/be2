@@ -1,4 +1,5 @@
 const logger = require('config/logger')
+const eventlog = require('api/eventlog')
 const jwt = require('jsonwebtoken')
 const passport = require('passport')
 const bcrypt = require('bcrypt')
@@ -246,5 +247,21 @@ module.exports.changePassword = async (req, res) => {
       error: err,
       message: '비밀번호가 변경되지 않았습니다. -서버에러-'
     })
+  }
+}
+
+module.exports.updateAuth = async (req, res) => {
+  try {
+    const { id, email, selected } = req.body
+    await Users.updateOne({ _id: id }, { $set: { auth: selected } })
+    logger.info(`사용자 지역 권한 변경 - 대상: ${email}, ${selected}`)
+    eventlog.info({
+      source: req.user.email,
+      message: `사용자 지역 권한 - 변경 - ${email}`
+    })
+    res.sendStatus(200)
+  } catch (e) {
+    logger.error(`사용자 지역 권한 변경 - 에러 ${e}`)
+    res.sendStatus(500)
   }
 }

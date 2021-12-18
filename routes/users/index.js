@@ -9,5 +9,6 @@ router.get('/admin', isLoggedIn, functions.admin)
 router.get('/level', isLoggedIn, functions.level)
 router.post('/color', isLoggedIn, functions.color)
 router.post('/changePassword', isLoggedIn, functions.changePassword)
+router.post('/auth', isLoggedIn, functions.updateAuth)
 
 module.exports = router
