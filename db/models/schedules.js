@@ -10,18 +10,16 @@ const scheduleSchema = new mongoose.Schema(
     date: String,
     dateValue: Date,
     week: Array,
-    ttsText: String,
-    ttsRate: Number,
-    ttsVoice: Object,
     user: String,
     file: Object,
     volume: Number,
+    nodes: Array,
     selected: Array,
     active: Boolean,
     color: String,
     startChime: Boolean,
     endChime: Boolean,
-    description: String,
+    description: String
   },
   {
     timestamps: true

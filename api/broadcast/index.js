@@ -1,5 +1,6 @@
 const Preset = require('db/models/pagePreset')
 const logger = require('config/logger')
+
 module.exports.getPreset = async (req, res) => {
   try {
     const { user } = req.query
