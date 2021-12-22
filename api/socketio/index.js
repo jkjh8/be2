@@ -17,8 +17,16 @@ exports = module.exports = (app) => {
       switch (command) {
         case 'check':
           const checked = await check(args)
-          console.log(checked)
+
           if (checked && checked.length) {
+            logger.warn(
+              `방송구간 중복 - ${checked
+                .map(
+                  (e) =>
+                    e.name + '- 채널 ' + e.dup.map((e) => e.channel).join(',')
+                )
+                .join(' ')}`
+            )
             eventlog.warning({
               source: args.user,
               id: args.id,
@@ -44,6 +52,7 @@ exports = module.exports = (app) => {
             state: true
           })
           await broadcastId.save()
+          logger.info(`방송 - 라이브 시작 ${JSON.stringify(args)}`)
           eventlog.info({
             source: args.user,
             id: args.id,
@@ -59,6 +68,7 @@ exports = module.exports = (app) => {
               { id: args.id },
               { $set: { state: false } }
             )
+            logger.info(`방송 - 라이브 종료 ${JSON.stringify(args)}`)
             eventlog.info({
               source: args.user,
               id: args.id,

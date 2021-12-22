@@ -49,7 +49,7 @@ module.exports.add = async (req, res) => {
       ...req.body
     })
     const r = await schedule.save()
-    logger.info(`스케줄 - 등록 ${req.body.toString()}`)
+    logger.info(`스케줄 - 등록 ${JSON.stringify(req.body)}`)
     res.status(200).json(r)
   } catch (e) {
     logger.error(`스케줄 - 등록 에러 ${e.message}`)
@@ -68,9 +68,7 @@ module.exports.update = async (req, res) => {
     await copyFile(file.file, scheduleFile)
 
     const r = await Schedules.updateOne({ _id: _id }, { $set: req.body })
-    const zone = zoneToString(req.body.nodes)
-    console.log(zone)
-    logger.info(`스케줄 - 수정 ${zone}`)
+    logger.info(`스케줄 - 수정 ${JSON.stringify(req.body)}`)
     res.status(200).json(r)
   } catch (e) {
     logger.error(`스케줄 - 수정 에러 ${e.message}`)
@@ -94,11 +92,11 @@ module.exports.active = async (req, res) => {
   }
 }
 
-function zoneToString(zones) {
-  const rt = []
-  zones.forEach((parent) => {
-    const child = parent.children.map((e) => e.name).join(',')
-    rt.push(`${parent.name}: ${child}`)
-  })
-  return rt
-}
+// function zoneToString(zones) {
+//   const rt = []
+//   zones.forEach((parent) => {
+//     const child = parent.children.map((e) => e.name).join(',')
+//     rt.push(`${parent.name}: ${child}`)
+//   })
+//   return rt
+// }

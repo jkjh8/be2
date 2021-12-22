@@ -148,16 +148,20 @@ const send = async (ipaddress, obj) => {
 }
 
 const getStatus = async (ipaddress) => {
-  const command = {
-    id: `status,${ipaddress}`,
-    method: 'StatusGet',
-    params: 0
-  }
-  const r = await send(ipaddress, command)
-  if (Object.keys(r).includes('result')) {
-    return r.result
-  } else {
-    return null
+  try {
+    const command = {
+      id: `status,${ipaddress}`,
+      method: 'StatusGet',
+      params: 0
+    }
+    const r = await send(ipaddress, command)
+    if (Object.keys(r).includes('result')) {
+      return r.result
+    } else {
+      return null
+    }
+  } catch (e) {
+    throw e
   }
 }
 
@@ -209,84 +213,100 @@ async function updatePA(ipaddress, arr) {
 }
 
 const setVolume = async (value) => {
-  const { volume, mute, channel, device } = value
+  try {
+    const { volume, mute, channel, device } = value
 
-  if (device.devicetype === 'Q-Sys') {
-    const command = {
-      id: `vol,${device.ipaddress}`,
-      method: 'Component.Set',
-      params: {
-        Name: 'PA',
-        Controls: []
+    if (device.devicetype === 'Q-Sys') {
+      const command = {
+        id: `vol,${device.ipaddress}`,
+        method: 'Component.Set',
+        params: {
+          Name: 'PA',
+          Controls: []
+        }
       }
+      if (volume !== null && volume !== 'undefined') {
+        command.params.Controls.push({
+          Name: `zone.${channel}.gain`,
+          Value: volume
+        })
+      }
+      if (mute !== null && mute !== 'undefined') {
+        command.params.Controls.push({
+          Name: `zone.${channel}.mute`,
+          Value: mute
+        })
+      }
+      const r = await send(device.ipaddress, command)
+      return r
     }
-    if (volume !== null && volume !== 'undefined') {
-      command.params.Controls.push({
-        Name: `zone.${channel}.gain`,
-        Value: volume
-      })
-    }
-    if (mute !== null && mute !== 'undefined') {
-      command.params.Controls.push({
-        Name: `zone.${channel}.mute`,
-        Value: mute
-      })
-    }
-    const r = await send(device.ipaddress, command)
-    return r
+  } catch (e) {
+    throw e
   }
 }
 
 const onair = async (args) => {
-  const { name, ipaddress, channels } = args
-  const command = {
-    jsonrpc: '2.0',
-    id: `onair`,
-    method: 'PA.PageSubmit',
-    params: {
-      Zones: channels,
-      Description: name,
-      Mode: 'live',
-      Station: 1,
-      Priority: 3,
-      Start: true
+  try {
+    const { name, ipaddress, channels } = args
+    const command = {
+      jsonrpc: '2.0',
+      id: `onair`,
+      method: 'PA.PageSubmit',
+      params: {
+        Zones: channels,
+        Description: name,
+        Mode: 'live',
+        Station: 1,
+        Priority: 3,
+        Start: true
+      }
     }
+    const r = await send(ipaddress, command)
+    return r
+  } catch (e) {
+    throw e
   }
-  const r = await send(ipaddress, command)
-  return r
 }
 
 const offair = async (args) => {
-  const { ipaddress, pageid } = args
-  const command = {
-    jsonrpc: '2.0',
-    id: `offair`,
-    method: 'PA.PageStop',
-    params: {
-      PageID: pageid
+  try {
+    const { ipaddress, pageid } = args
+    const command = {
+      jsonrpc: '2.0',
+      id: `offair`,
+      method: 'PA.PageStop',
+      params: {
+        PageID: pageid
+      }
     }
+    const r = await send(ipaddress, command)
+    return r
+  } catch (e) {
+    throw e
   }
-  const r = await send(ipaddress, command)
-  return r
 }
 
 const cancelAll = async (ipaddress) => {
-  const command = {
-    jsonrpc: '2.0',
-    id: 'cancelall',
-    method: 'Component.Set',
-    params: {
-      Name: 'PA',
-      Controls: [
-        {
-          Name: 'cancel.all.commands',
-          Value: 1
-        }
-      ]
+  try {
+    const command = {
+      jsonrpc: '2.0',
+      id: 'cancelall',
+      method: 'Component.Set',
+      params: {
+        Name: 'PA',
+        Controls: [
+          {
+            Name: 'cancel.all.commands',
+            Value: 1
+          }
+        ]
+      }
     }
+    const r = await send(ipaddress, command)
+    return r
+  } catch (e) {
+    throw e
   }
-  const r = await send(ipaddress, command)
-  return r
 }
 
 module.exports = {

@@ -17,7 +17,7 @@ module.exports.savePreset = async (req, res) => {
       ...req.body
     })
     const r = await preset.save()
-    logger.info(`새로운 페이지 프로셋 등록 - ${req.body}`)
+    logger.info(`새로운 페이지 프로셋 등록 - ${JSON.stringify(req.body)}`)
     res.status(200).json(r)
   } catch (e) {
     logger.error(`새로운 페이지 프로셋 등록 - 에러 ${e.message}`)

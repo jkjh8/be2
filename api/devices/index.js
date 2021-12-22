@@ -19,10 +19,10 @@ module.exports.post = async (req, res) => {
     const device = await Devices.create({
       ...req.body
     })
-    logger.info(`디바이스 - 추가 - ${device.ipaddress}`)
+    logger.info(`디바이스 - 추가 - ${JSON.stringify(device)}`)
     eventlog.info({
       source: req.user.email,
-      message: `디바이스 - 추가 - ${device.ipaddress}`
+      message: `디바이스 - 추가 - ${JSON.stringify(device)}`
     })
     res.status(200).json(device)
   } catch (e) {
@@ -36,7 +36,7 @@ module.exports.put = async (req, res) => {
     const device = req.body
     const r = await Devices.updateOne({ _id: device._id }, { $set: device })
     const rtDevice = await Devices.findOne({ _id: device._id })
-    logger.info(`디바이스 - 수정 - ${device.ipaddress}`)
+    logger.info(`디바이스 - 수정 - ${JSON.stringify(device)}`)
     eventlog.info({
       source: req.user.email,
       message: `디바이스 - 수정 - ${device.ipaddress}`
