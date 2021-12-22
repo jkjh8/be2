@@ -26,6 +26,7 @@ exports.get = async (req, res) => {
           type: 'directory',
           base: remotePath,
           fullpath: currentPath,
+          file: path.join(currentPath, files[i].name),
           name: files[i].name
         })
       } else {
@@ -36,6 +37,7 @@ exports.get = async (req, res) => {
             type: 'audio',
             base: remotePath,
             fullpath: currentPath,
+            file: path.join(currentPath, files[i].name),
             name: files[i].name,
             size: fs.statSync(path.join(currentPath, files[i].name)).size
           })
@@ -45,6 +47,7 @@ exports.get = async (req, res) => {
             type: 'video',
             base: remotePath,
             fullpath: currentPath,
+            file: path.join(currentPath, files[i].name),
             name: files[i].name,
             size: fs.statSync(path.join(currentPath, files[i].name)).size
           })
@@ -54,6 +57,7 @@ exports.get = async (req, res) => {
             type: 'etc',
             base: remotePath,
             fullpath: currentPath,
+            file: path.join(currentPath, files[i].name),
             name: files[i].name,
             size: fs.statSync(path.join(currentPath, files[i].name)).size
           })
