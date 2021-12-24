@@ -158,47 +158,52 @@ module.exports.delete = async (req, res) => {
     res.status(500).json({ message: e.message })
   }
 }
-
-module.exports.refresh = async (req, res) => {
-  const { devicetype, ipaddress } = req.query
-  let r
+const fnRefresh = async (device) => {
   try {
+    const { devicetype, ipaddress } = device
+    let r
     switch (devicetype) {
       case 'Q-Sys':
         r = await qsys.getStatus(ipaddress)
-        await Devices.updateOne(
-          { ipoaddress: ipaddress },
-          { $set: { detail: r, status: true } }
-        )
         break
       case 'Barix':
-        const newData = await barix.get(ipaddress)
-        r = await Devices.updateOne(
-          { ipaddress: ipaddress },
-          { $set: { detail: newData, status: true } }
-        )
+        r = await barix.get(ipaddress)
         break
     }
+    console.log(r)
+    await Devices.updateOne(
+      { ipaddress },
+      { $set: { detail: r, status: true } }
+    )
+  } catch (e) {
+    logger.error(`디바이스 - 갱신 에러 ${e.message}`)
+    await Devices.updateOne({ ipaddress }, { $set: { status: false } })
+    throw e
+  }
+}
+
+module.exports.getStatusDevice = async (device) => {
+  return new Prommise(async (resolve, reject) => {
+    try {
+      await fnRefresh(device)
+      resolve
+    } catch (e) {
+      reject(e)
+    }
+  })
+}
+
+module.exports.refresh = async (req, res) => {
+  try {
+    await fnRefresh(req.query)
     logger.info(
       `디바이스 - 갱신 - ${req.query.ipaddress ?? 'None'}, ${
         req.query.devicetype ?? 'None'
       }`
     )
-    await Devices.updateOne(
-      { ipaddress: ipaddress },
-      { $set: { status: true } }
-    )
     res.sendStatus(200)
   } catch (e) {
-    await Devices.updateOne(
-      { ipaddress: req.query.ipaddress },
-      { $set: { status: false } }
-    )
-    logger.error(
-      `디바이스 - 갱신 에러 - ${req.query.ipaddress ?? 'None'}, ${
-        req.query.devicetype ?? 'None'
-      }`
-    )
+    logger.error(`디바이스 - 수동 갱신 에러 ${e.message}`)
     res.status(500).json({ error: e })
   }
 }
