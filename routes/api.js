@@ -9,4 +9,6 @@ router.use('/systemlog', require('./systemlog'))
 router.use('/devices', require('./devices'))
 router.use('/tts', require('./tts'))
 router.use('/broadcast', require('./broadcast'))
+router.use('/status', require('./status'))
+
 module.exports = router

@@ -4,7 +4,7 @@ const logger = require('config/logger')
 const eventlog = require('api/eventlog')
 const dirTree = require('async-directory-tree')
 
-exports.get = async (req, res) => {
+module.exports.get = async (req, res) => {
   const { folder } = req.body
   let remotePath
   let currentPath
@@ -71,7 +71,7 @@ exports.get = async (req, res) => {
   }
 }
 
-exports.getFolder = async (req, res) => {
+module.exports.getFolder = async (req, res) => {
   const { folder } = req.body
   let remotePath
   let currentPath
@@ -145,21 +145,35 @@ module.exports.createFolder = async (req, res) => {
   }
 }
 
-const removeFolder = async function (path) {
-  if (fs.existsSync(path)) {
-    fs.readdirSync(path).forEach((file, index) => {
-      const currentPath = `${path}/${file}`
+const removeFolder = async function (filePath) {
+  if (fs.existsSync(filePath)) {
+    fs.readdirSync(filePath).forEach((file, index) => {
+      const currentPath = `${filePath}/${file}`
       if (fs.lstatSync(currentPath).isDirectory()) {
         removeFolder(currentPath)
       } else {
         fs.unlinkSync(currentPath)
       }
     })
-    fs.rmdirSync(path)
+    fs.rmdirSync(filePath)
   }
 }
 
-module.exports.delete = async function (req, res) {
+module.exports.deleteTemp = async (req, res) => {
+  const folder = path.join(filesPath, 'temp')
+  if (fs.existsSync(folder)) {
+    fs.readdirSync(folder).forEach((file, index) => {
+      const currentPath = `${folder}/${file}`
+      if (fs.lstatSync(currentPath).isDirectory()) {
+        removeFolder(currentPath)
+      } else {
+        fs.unlinkSync(currentPath)
+      }
+    })
+  }
+}
+
+module.exports.delete = async (req, res) => {
   try {
     const { type, fullpath, name } = req.body
     const target = path.join(fullpath, name)
@@ -190,7 +204,7 @@ module.exports.delete = async function (req, res) {
   }
 }
 
-exports.upload = async (req, res) => {
+module.exports.upload = async (req, res) => {
   try {
     const { folder } = req.body
     const { file } = req.files
@@ -229,7 +243,7 @@ exports.upload = async (req, res) => {
   }
 }
 
-exports.download = async (req, res) => {
+module.exports.download = async (req, res) => {
   try {
     const { fullpath, name } = req.body
     logger.info(
@@ -244,13 +258,13 @@ exports.download = async (req, res) => {
   }
 }
 
-exports.getTree = async (req, res) => {
+module.exports.getTree = async (req, res) => {
   const tree = await dirTree(filesPath, {})
   console.log(tree)
   res.status(200).json(tree)
 }
 
-exports.check = async (req, res) => {
+module.exports.check = async (req, res) => {
   const { folder, name } = req.query
   console.log(folder, name)
   try {
