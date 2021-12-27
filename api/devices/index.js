@@ -158,6 +158,8 @@ module.exports.delete = async (req, res) => {
     res.status(500).json({ message: e.message })
   }
 }
+
+// 상태 갱신
 const fnRefresh = async (device) => {
   try {
     const { devicetype, ipaddress } = device
@@ -170,8 +172,7 @@ const fnRefresh = async (device) => {
         r = await barix.get(ipaddress)
         break
     }
-    console.log(r)
-    await Devices.updateOne(
+    return await Devices.updateOne(
       { ipaddress },
       { $set: { detail: r, status: true } }
     )
@@ -182,15 +183,15 @@ const fnRefresh = async (device) => {
   }
 }
 
-module.exports.getStatusDevice = async (device) => {
-  return new Prommise(async (resolve, reject) => {
-    try {
+module.exports.getStatusDevice = async () => {
+  try {
+    const devices = await Devices.find()
+    devices.forEach(async (device) => {
       await fnRefresh(device)
-      resolve
-    } catch (e) {
-      reject(e)
-    }
-  })
+    })
+  } catch (e) {
+    logger.error(`디바이스 갱신 - 에러 ${e.message}`)
+  }
 }
 
 module.exports.refresh = async (req, res) => {
@@ -205,6 +206,18 @@ module.exports.refresh = async (req, res) => {
   } catch (e) {
     logger.error(`디바이스 - 수동 갱신 에러 ${e.message}`)
     res.status(500).json({ error: e })
+  }
+}
+
+module.exports.getStatusPA = async () => {
+  try {
+    const devices = await Devices.find({ devicetype: 'Q-Sys' })
+    devices.forEach(async (device) => {
+      const r = await qsys.getPA(device.ipaddress)
+      await qsys.updatePA(device.ipaddress, r)
+    })
+  } catch (e) {
+    logger.error(`PA 상태 갱신 - 에러 ${e.message}`)
   }
 }
 

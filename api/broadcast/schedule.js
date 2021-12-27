@@ -37,7 +37,49 @@ module.exports.get = async (req, res) => {
 
 module.exports.add = async (req, res) => {
   try {
-    const { id, file } = req.body
+    const { _id, repeat, date, week, time, id, file } = req.body
+    let dup
+    let error = false
+    switch (repeat) {
+      case '매일':
+        dup = await Schedules.find({ time: time })
+        if (dup.length) {
+          error = true
+        }
+        break
+      case '한번':
+        dup = await Schedules.find({
+          time: time,
+          date: date
+        })
+        if (dup.length) {
+          error = true
+        }
+        break
+      case '매주':
+        wday = []
+        dup = await Schedules.find({ time: time })
+        for (let i = 0; i < dup.length; i++) {
+          if (dup[i].repeat === '매일' || dup[i].repeat === '한번') {
+            error = true
+            break
+          }
+          dup[i].week.forEach((item) => {
+            week.forEach((wday) => {
+              if (item.value === wday.value) {
+                error = true
+              }
+            })
+          })
+        }
+        break
+    }
+    if (error) {
+      return res.status(403).json({
+        message: '스케줄 중복',
+        caption: '동일시간에 다른 스케줄이 존재합니다'
+      })
+    }
 
     // move schedule file
     const scheduleFolder = path.join(filesPath, 'schedule', id)
@@ -59,7 +101,50 @@ module.exports.add = async (req, res) => {
 
 module.exports.update = async (req, res) => {
   try {
-    const { _id, id, file } = req.body
+    const { _id, repeat, date, week, time, id, file } = req.body
+    let dup
+    let error = false
+    switch (repeat) {
+      case '매일':
+        dup = await Schedules.find({ time: time, _id: { $ne: _id } })
+        if (dup.length) {
+          error = true
+        }
+        break
+      case '한번':
+        dup = await Schedules.find({
+          time: time,
+          date: date,
+          _id: { $ne: _id }
+        })
+        if (dup.length) {
+          error = true
+        }
+        break
+      case '매주':
+        wday = []
+        dup = await Schedules.find({ time: time, _id: { $ne: _id } })
+        for (let i = 0; i < dup.length; i++) {
+          if (dup[i].repeat === '매일' || dup[i].repeat === '한번') {
+            error = true
+            break
+          }
+          dup[i].week.forEach((item) => {
+            week.forEach((wday) => {
+              if (item.value === wday.value) {
+                error = true
+              }
+            })
+          })
+        }
+        break
+    }
+    if (error) {
+      return res.status(403).json({
+        message: '스케줄 중복',
+        caption: '동일시간에 다른 스케줄이 존재합니다'
+      })
+    }
 
     // move schedule file
     const scheduleFolder = path.join(filesPath, 'schedule', id)

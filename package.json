@@ -25,6 +25,7 @@
     "mongoose-bcrypt": "^1.9.0",
     "mongoose-paginate-v2": "^1.4.2",
     "morgan": "~1.9.1",
+    "node-cron": "^3.0.0",
     "nodemon": "^2.0.15",
     "passport": "^0.5.0",
     "passport-jwt": "^4.0.0",

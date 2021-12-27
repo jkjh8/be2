@@ -8,6 +8,7 @@ const cors = require('cors')
 const cookieParser = require('cookie-parser')
 const httpLogger = require('morgan')
 const fileupload = require('express-fileupload')
+const cron = require('node-cron')
 
 const logger = require('config/logger')
 const eventlog = require('api/eventlog')
@@ -72,4 +73,23 @@ makeFolder(path.join(filesPath, 'Temp'))
 
 app.use('/files', express.static(filesPath))
 app.use('/media', express.static(path.join(filesPath, 'Media')))
+
+// cron
+const deviceApi = require('api/devices')
+const Devices = require('db/models/devices')
+cron.schedule('*/1 * * * *', async () => {
+  try {
+    console.log('갱신')
+    await deviceApi.getStatusDevice()
+    app.io.emit('devices')
+  } catch (e) {
+    console.error(e.message)
+  }
+})
+const schedule = require('api/schedule')
+cron.schedule('*/1 * * * *', async () => {
+  await schedule.get()
+  await deviceApi.getStatusPA()
+})
+
 module.exports = app
