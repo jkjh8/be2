@@ -1,6 +1,7 @@
 const logger = require('config/logger')
 const eventlog = require('api/eventlog')
 const Broadcast = require('db/models/broadcast')
+const Devices = require('db/models/devices')
 const { check, onair, offair } = require('./functions')
 
 exports = module.exports = (app) => {
@@ -45,25 +46,32 @@ exports = module.exports = (app) => {
           })
           break
         case 'onair':
-          r = await onair(args, app)
-          const broadcastId = new Broadcast({
-            id: args.id,
-            zones: r,
-            state: true
-          })
-          await broadcastId.save()
-          logger.info(`방송 - 라이브 시작 ${JSON.stringify(args)}`)
-          eventlog.info({
-            source: args.user,
-            id: args.id,
-            zones: args.nodes,
-            message: `방송시작 - ${args.mode} - ${args.file.name}`
-          })
+          try {
+            r = await onair(args, app)
+            const broadcastId = new Broadcast({
+              id: args.id,
+              zones: r,
+              state: true
+            })
+            await broadcastId.save()
+            logger.info(`방송 - 라이브 시작 ${JSON.stringify(args)}`)
+            eventlog.info({
+              source: args.user,
+              id: args.id,
+              zones: args.nodes,
+              message: `방송시작 - ${args.mode} - ${args.file.name}`
+            })
+
+            const deviceState = await Devices.find().populate('children')
+            console.log('emit devices')
+            app.io.emit('devices', deviceState)
+          } catch (e) {
+            logger.error(`라이브 온에어 - 에러 ${e}`)
+          }
           break
         case 'offair':
           try {
-            const pageId = await Broadcast.findOne({ id: args.id })
-            r = await offair(pageId.zones)
+            await offair(args)
             await Broadcast.updateOne(
               { id: args.id },
               { $set: { state: false } }
@@ -75,8 +83,11 @@ exports = module.exports = (app) => {
               zones: args.nodes,
               message: `방송종료`
             })
+            const deviceState = await Devices.find().populate('children')
+            console.log('emit devices')
+            app.io.emit('devices', deviceState)
           } catch (e) {
-            console.error(e)
+            logger.error(`라이브 오프에어 - 에러 ${e}`)
           }
           break
       }

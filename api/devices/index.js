@@ -9,8 +9,17 @@ module.exports.get = async (req, res) => {
     const r = await Devices.find().populate('children').populate('parent')
     res.status(200).json(r)
   } catch (e) {
-    logger.error(`디바이스 - 서버 에러 - ${e.message}`)
-    res.status(500).json({ error: e.message })
+    logger.error(`디바이스 - 서버 에러 - ${e}`)
+    res.status(500).json({ error: e })
+  }
+}
+
+module.exports.getParent = async (req, res) => {
+  try {
+    const r = await Devices.find({ mode: 'Master' }).populate('children')
+    res.status(200).json(r)
+  } catch (e) {
+    logger.error(`디바이스 - 서버 에러 ${e}`)
   }
 }
 
@@ -212,10 +221,11 @@ module.exports.refresh = async (req, res) => {
 module.exports.getStatusPA = async () => {
   try {
     const devices = await Devices.find({ devicetype: 'Q-Sys' })
-    devices.forEach(async (device) => {
-      const r = await qsys.getPA(device.ipaddress)
-      await qsys.updatePA(device.ipaddress, r)
-    })
+    for (let i = 0; i < devices.length; i++) {
+      const r = await qsys.getPA(devices[i].ipaddress)
+      await qsys.updatePA(devices[i].ipaddress, r)
+    }
+    return
   } catch (e) {
     logger.error(`PA 상태 갱신 - 에러 ${e.message}`)
   }
@@ -223,9 +233,7 @@ module.exports.getStatusPA = async () => {
 
 module.exports.refreshPa = async (req, res) => {
   try {
-    const { ipaddress } = req.query
-    const r = await qsys.getPA(ipaddress)
-    await qsys.updatePA(ipaddress, r)
+    await refreshPa(req.query.ipaddress)
     res.sendStatus(200)
   } catch (e) {
     logger.error(`디바이스 PA - 에러 - ${e}`)
@@ -233,15 +241,37 @@ module.exports.refreshPa = async (req, res) => {
   }
 }
 
+const refreshPa = async (ipaddress) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const r = await qsys.getPA(ipaddress)
+      if (r) {
+        await qsys.updatePA(ipaddress, r)
+      }
+      resolve()
+    } catch {
+      reject()
+    }
+  })
+}
+
 module.exports.volume = async (req, res) => {
   try {
     const { device, volume, mute, channel } = req.body
+    const target = await Devices.findOne({ ipaddress: device.ipaddress })
+    target.mute[channel - 1] = mute
+    if (volume || volume === 0) {
+      target.gain[channel - 1] = volume
+    }
+
+    await target.save()
     const r = await qsys.setVolume(req.body)
     if (r && r.result) {
       logger.info(
         `디바이스 - 볼륨 변경 - ${device.ipaddress} channel: ${channel} vol: ${volume} mute: ${mute}`
       )
-      res.status(200).json({ device: req.body.device, status: true })
+      const devices = await Devices.find().populate('children')
+      res.status(200).json(devices)
     } else {
       logger.error(`디바이스 -볼륨 에러 - ${r}`)
       res.sendStatus(500)
@@ -255,13 +285,15 @@ module.exports.volume = async (req, res) => {
 module.exports.cancelAll = async (req, res) => {
   try {
     const { ipaddress, user } = req.query
-    const r = await qsys.cancelAll(ipaddress, user)
+    await qsys.cancelAll(ipaddress, user)
+    await refreshPa(ipaddress)
     logger.warn(`방송강제취소 - user: ${user}, IP: ${ipaddress}`)
     eventlog.warning({
       source: req.user.email,
       message: `방송강제취소 - ${ipaddress}`
     })
-    res.sendStatus(200)
+    const devices = await Devices.find().populate('children')
+    res.status(200).json(devices)
   } catch (e) {
     logger.error(`방송강제취소 - 에러 ${req.query}`)
     res.sendStatus(500)

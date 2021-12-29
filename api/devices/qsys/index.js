@@ -40,15 +40,21 @@ const qrc = class {
     }
 
     this.client.on('data', async (data) => {
-      if (data[data.length - 1] === 0x00) {
-        this._data += data.toString('utf8').replace('\0', '')
-        this._finished = true
-      } else {
-        if (this._finished) {
-          this._data = ''
+      try {
+        if (data[data.length - 1] === 0x00) {
+          this._data += data.toString('utf8').replace('\0', '')
+          this._finished = true
+          // console.log(this._data)
+        } else {
+          if (this._finished) {
+            this._data = ''
+          }
+          this._finished = false
+          this._data += data.toString('utf8')
         }
-        this._finished = false
-        this._data += data.toString('utf8')
+      } catch (e) {
+        this._data = ''
+        throw e
       }
     })
     this.client.on('end', () => {
@@ -116,7 +122,11 @@ const qrc = class {
           if (this._finished) {
             clearInterval(interval)
             this.clearNoOp()
-            resolve(this._data)
+            if (this._data) {
+              resolve(this._data)
+            } else {
+              reject()
+            }
           }
         })
       } catch (e) {
@@ -139,7 +149,11 @@ const send = async (ipaddress, obj) => {
       } else {
         const r = await clients[ipaddress].send(obj)
         const result = JSON.parse(r)
-        resolve(result)
+        if (result) {
+          resolve(result)
+        } else {
+          reject()
+        }
       }
     } catch (e) {
       reject(e)
@@ -186,30 +200,32 @@ const getPA = async (ipaddress) => {
 }
 
 async function updatePA(ipaddress, arr) {
-  const gain = []
-  const mute = []
-  const active = []
-  try {
-    for (let i = 0; i < arr.length; i++) {
-      if (arr[i].Name.match(/zone.\d+.gain/)) {
-        const channel = arr[i].Name.replace(/[^0-9]/g, '')
-        gain[channel - 1] = arr[i].Value
-      } else if (arr[i].Name.match(/zone.\d+.mute/)) {
-        const channel = arr[i].Name.replace(/[^0-9]/g, '')
-        mute[channel - 1] = arr[i].Value
-      } else if (arr[i].Name.match(/zone.\d+.active/)) {
-        const channel = arr[i].Name.replace(/[^0-9]/g, '')
-        active[channel - 1] = arr[i].Value
+  return new Promise(async (resolve, reject) => {
+    const gain = []
+    const mute = []
+    const active = []
+    try {
+      for (let i = 0; i < arr.length; i++) {
+        if (arr[i].Name.match(/zone.\d+.gain/)) {
+          const channel = arr[i].Name.replace(/[^0-9]/g, '')
+          gain[channel - 1] = arr[i].Value
+        } else if (arr[i].Name.match(/zone.\d+.mute/)) {
+          const channel = arr[i].Name.replace(/[^0-9]/g, '')
+          mute[channel - 1] = arr[i].Value
+        } else if (arr[i].Name.match(/zone.\d+.active/)) {
+          const channel = arr[i].Name.replace(/[^0-9]/g, '')
+          active[channel - 1] = arr[i].Value
+        }
       }
+      await Devices.updateOne(
+        { ipaddress: ipaddress },
+        { $set: { gain, mute, active, status: true } }
+      )
+      resolve({ gain, mute, active })
+    } catch (e) {
+      reject(e)
     }
-    await Devices.updateOne(
-      { ipaddress: ipaddress },
-      { $set: { gain, mute, active, status: true } }
-    )
-    return { gain, mute, active }
-  } catch (e) {
-    return e
-  }
+  })
 }
 
 const setVolume = async (value) => {

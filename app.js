@@ -77,11 +77,12 @@ app.use('/media', express.static(path.join(filesPath, 'Media')))
 // cron
 const deviceApi = require('api/devices')
 const Devices = require('db/models/devices')
-cron.schedule('*/1 * * * *', async () => {
+cron.schedule('30 */1 * * * *', async () => {
   try {
     console.log('갱신')
     await deviceApi.getStatusDevice()
-    app.io.emit('devices')
+    const r = await Devices.find().populate('children')
+    app.io.emit('devices', r)
   } catch (e) {
     console.error(e.message)
   }

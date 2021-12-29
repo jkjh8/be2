@@ -56,10 +56,12 @@ exports.onair = async (command, app) => {
           ...item,
           name: name
         })
-        const device = await Devices.findOneAndUpdate(
-          { ipaddress: item.ipaddress },
-          { $set: { pageid: r.result.PageID } }
-        )
+        const device = await Devices.findOne({ ipaddress: item.ipaddress })
+        for (let i = 0; i < item.channels.length; i++) {
+          device.active[item.channels[i] - 1] = true
+        }
+        device.pageid = r.result.PageID
+        await device.save()
 
         broadcastzones.push({
           name: device.name,
@@ -84,15 +86,20 @@ exports.offair = async (command) => {
   return new Promise((resolve, reject) => {
     const broadcastzones = []
     try {
-      command.forEach(async (item) => {
-        const r = await qsys.offair(item)
+      command.nodes.forEach(async (item) => {
+        const device = await Devices.findOne({ ipaddress: item.ipaddress })
+        const r = await qsys.offair(device)
+        for (let i = 0; i < item.channels.length; i++) {
+          device.active[item.channels[i] - 1] = false
+        }
+        await device.save()
         if (r.result) {
           broadcastzones.push({
             name: item.name,
             ipaddress: item.ipaddress
           })
         }
-        if (broadcastzones.length === command.length) {
+        if (broadcastzones.length === command.nodes.length) {
           resolve(broadcastzones)
         }
       })
