@@ -2,6 +2,7 @@ const Schedules = require('db/models/schedules')
 const logger = require('config/logger')
 const fs = require('fs')
 const path = require('path')
+const moment = require('moment')
 
 const makeFolder = (dir) => {
   if (!fs.existsSync(dir)) {
@@ -52,6 +53,7 @@ module.exports.add = async (req, res) => {
           time: time,
           date: date
         })
+        console.log(dup)
         if (dup.length) {
           error = true
         }
@@ -75,6 +77,7 @@ module.exports.add = async (req, res) => {
         break
     }
     if (error) {
+      console.error(error)
       return res.status(403).json({
         message: '스케줄 중복',
         caption: '동일시간에 다른 스케줄이 존재합니다'
@@ -177,6 +180,30 @@ module.exports.active = async (req, res) => {
   }
 }
 
+module.exports.parcing = async () => {
+  const now = moment()
+  const date = moment(now).format('YYYY-MM-DD')
+  const time = moment(now).format('hh:mm')
+  const week = moment(now).weekday()
+  console.log(date, time, week)
+  const schedules = await Schedules.findOne({ time: time })
+  if (schedules.repeat === '매일') {
+    return console.log('스케줄 매일')
+  } else if (schedules.repeat === '한번') {
+    if (schedules.date == date) {
+      return console.log('스케줄 한번')
+    }
+  } else if (schedules.repeat === '매주') {
+    for (let i = 0; i < schedules.week.length; i++) {
+      if (schedules.week[i] == week) {
+        console.log('스케줄 매주')
+        break
+      }
+    }
+  }
+
+  console.log('schedule', schedules)
+}
 // function zoneToString(zones) {
 //   const rt = []
 //   zones.forEach((parent) => {

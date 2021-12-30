@@ -77,7 +77,9 @@ app.use('/media', express.static(path.join(filesPath, 'Media')))
 // cron
 const deviceApi = require('api/devices')
 const Devices = require('db/models/devices')
-cron.schedule('30 */1 * * * *', async () => {
+const schedule = require('api/broadcast/schedule')
+
+cron.schedule('20 */30 * * * *', async () => {
   try {
     console.log('갱신')
     await deviceApi.getStatusDevice()
@@ -87,10 +89,13 @@ cron.schedule('30 */1 * * * *', async () => {
     console.error(e.message)
   }
 })
-const schedule = require('api/schedule')
-cron.schedule('*/1 * * * *', async () => {
-  await schedule.get()
+
+cron.schedule('*/7 * * * *', async () => {
   await deviceApi.getStatusPA()
+})
+
+cron.schedule('*/1 * * * *', async () => {
+  await schedule.parcing()
 })
 
 module.exports = app
