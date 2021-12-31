@@ -1,4 +1,5 @@
 const Schedules = require('db/models/schedules')
+const eventlog = require('api/eventlog')
 const logger = require('config/logger')
 const fs = require('fs')
 const path = require('path')
@@ -38,7 +39,7 @@ module.exports.get = async (req, res) => {
 
 module.exports.add = async (req, res) => {
   try {
-    const { _id, repeat, date, week, time, id, file } = req.body
+    const { _id, repeat, date, week, time, id, file, nodes } = req.body
     let dup
     let error = false
     switch (repeat) {
@@ -94,17 +95,30 @@ module.exports.add = async (req, res) => {
       ...req.body
     })
     const r = await schedule.save()
+
+    // 로그
     logger.info(`스케줄 - 등록 ${JSON.stringify(req.body)}`)
+    eventlog.info({
+      source: req.user.email,
+      id: id,
+      zones: nodes,
+      message: `스케줄 등록 - ${req.body.name} ${file.name}`
+    })
     res.status(200).json(r)
   } catch (e) {
-    logger.error(`스케줄 - 등록 에러 ${e.message}`)
+    logger.error(`스케줄 - 등록 에러 ${e}`)
+    eventlog.error({
+      source: req.user.email,
+      id: req.body.id,
+      message: `스케줄 등록 에러 ${req.body.name}`
+    })
     res.sendStatus(500)
   }
 }
 
 module.exports.update = async (req, res) => {
   try {
-    const { _id, repeat, date, week, time, id, file } = req.body
+    const { _id, repeat, date, week, time, id, file, nodes } = req.body
     let dup
     let error = false
     switch (repeat) {
@@ -156,11 +170,41 @@ module.exports.update = async (req, res) => {
     await copyFile(file.file, scheduleFile)
 
     const r = await Schedules.updateOne({ _id: _id }, { $set: req.body })
+
     logger.info(`스케줄 - 수정 ${JSON.stringify(req.body)}`)
+    eventlog.info({
+      source: req.user.email,
+      id: id,
+      zones: nodes,
+      message: `스케줄 수정 - ${req.body.name} ${file.name}`
+    })
     res.status(200).json(r)
   } catch (e) {
     logger.error(`스케줄 - 수정 에러 ${e.message}`)
+    eventlog.error({
+      source: req.user.email,
+      id: req.body.id,
+      message: `스케줄 수정 에러 ${req.body.name}`
+    })
     res.sendStatus(500)
+  }
+}
+
+module.exports.delete = async (req, res) => {
+  try {
+    const { id } = req.query
+    const email = req.user
+    await Schedules.deleteOne({ _id: id })
+    logger.info(`스케줄 삭제 - user: ${email}, id: ${id}`)
+
+    eventlog.info({
+      source: req.user.email,
+      id: id,
+      message: '스케줄 삭제'
+    })
+    res.sendStatus(200)
+  } catch (e) {
+    logger.error(`스케줄 삭제 - 에러 ${e}`)
   }
 }
 
@@ -172,6 +216,11 @@ module.exports.active = async (req, res) => {
     logger.info(
       `스케줄 변경 - 동작상태 - user: ${email} id: ${id}, value: ${value}`
     )
+    eventlog.info({
+      source: req.user.email,
+      id: id,
+      message: `스케줄 동작 상태 변경 - ${value}`
+    })
     res.sendStatus(200)
   } catch (e) {
     logger.error(
@@ -183,26 +232,27 @@ module.exports.active = async (req, res) => {
 module.exports.parcing = async () => {
   const now = moment()
   const date = moment(now).format('YYYY-MM-DD')
-  const time = moment(now).format('hh:mm')
+  const time = moment(now).format('HH:mm')
   const week = moment(now).weekday()
   console.log(date, time, week)
   const schedules = await Schedules.findOne({ time: time })
-  if (schedules.repeat === '매일') {
-    return console.log('스케줄 매일')
-  } else if (schedules.repeat === '한번') {
-    if (schedules.date == date) {
-      return console.log('스케줄 한번')
-    }
-  } else if (schedules.repeat === '매주') {
-    for (let i = 0; i < schedules.week.length; i++) {
-      if (schedules.week[i] == week) {
-        console.log('스케줄 매주')
-        break
+  console.log('schedule', schedules)
+  if (schedules.active) {
+    if (schedules.repeat === '매일') {
+      return console.log('스케줄 매일')
+    } else if (schedules.repeat === '한번') {
+      if (schedules.date == date) {
+        return console.log('스케줄 한번')
+      }
+    } else if (schedules.repeat === '매주') {
+      for (let i = 0; i < schedules.week.length; i++) {
+        if (schedules.week[i] == week) {
+          console.log('스케줄 매주')
+          break
+        }
       }
     }
   }
-
-  console.log('schedule', schedules)
 }
 // function zoneToString(zones) {
 //   const rt = []

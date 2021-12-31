@@ -8,5 +8,6 @@ router.get('/', isLoggedIn, schedule.get)
 router.post('/', isLoggedIn, schedule.add)
 router.put('/', isLoggedIn, schedule.update)
 router.get('/active', isLoggedIn, schedule.active)
+router.get('/delete', isLoggedIn, schedule.delete)
 
 module.exports = router
