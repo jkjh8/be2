@@ -3,6 +3,7 @@ const logger = require('config/logger')
 const eventlog = require('api/eventlog')
 const barix = require('./barix')
 const qsys = require('./qsys')
+const local = require('./local')
 
 module.exports.get = async (req, res) => {
   try {
@@ -171,24 +172,39 @@ module.exports.delete = async (req, res) => {
 // 상태 갱신
 const fnRefresh = async (device) => {
   try {
-    const { devicetype, ipaddress } = device
+    const { _id, devicetype, ipaddress } = device
     let r
     switch (devicetype) {
       case 'Q-Sys':
         r = await qsys.getStatus(ipaddress)
+        await Devices.updateOne(
+          { ipaddress },
+          { $set: { detail: r, status: true } }
+        )
         break
       case 'Barix':
         r = await barix.get(ipaddress)
+        await Devices.updateOne(
+          { ipaddress },
+          { $set: { detail: r, status: true } }
+        )
+        break
+      case 'Local':
+        r = await local.check(_id)
+        if (r) {
+          await Devices.updateOne({ _id: _id }, { $set: { status: true } })
+        } else {
+          await Devices.updateOne({ _id: _id }, { $set: { status: true } })
+        }
         break
     }
-    return await Devices.updateOne(
-      { ipaddress },
-      { $set: { detail: r, status: true } }
-    )
   } catch (e) {
     logger.error(`디바이스 - 갱신 에러 ${e.message}`)
-    await Devices.updateOne({ ipaddress }, { $set: { status: false } })
-    throw e
+    await Devices.updateOne(
+      { ipaddress: device.ipaddress },
+      { $set: { status: false } }
+    )
+    console.error(e)
   }
 }
 

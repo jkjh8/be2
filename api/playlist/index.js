@@ -32,6 +32,7 @@ module.exports.post = async (req, res) => {
 module.exports.put = async (req, res) => {
   try {
     const { _id, name, user, list } = req.body
+    console.log(req.body)
     if (!req.user.admin && req.user.email !== user) {
       return res
         .status(403)
@@ -63,6 +64,36 @@ module.exports.remove = async (req, res) => {
     res.sendStatus(200)
   } catch (e) {
     logger.error(`Playlist Error - failed to remove list ${e}`)
+    res.sendStatus(500)
+  }
+}
+
+module.exports.addListItem = async (req, res) => {
+  try {
+    const { id, list } = req.body
+    const r = await Playlist.findOne({ _id: id })
+    list.forEach((item) => {
+      if (item.type !== 'directory' && item.type !== 'etc') {
+        r.list.push(item)
+      }
+    })
+    await r.save()
+    res.sendStatus(200)
+  } catch (e) {
+    logger.error(`Playlist Error - failed to add list item ${e}`)
+    res.sendStatus(500)
+  }
+}
+
+module.exports.removeListItem = async (req, res) => {
+  try {
+    const { id, index } = req.query
+    const r = await Playlist.findOne({ _id: id })
+    r.list.splice(index, 1)
+    r.save()
+    res.sendStatus(200)
+  } catch (e) {
+    logger.error(`Playlist Error = failed to remove list item ${e}`)
     res.sendStatus(500)
   }
 }

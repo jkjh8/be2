@@ -102,7 +102,7 @@ module.exports.add = async (req, res) => {
       source: req.user.email,
       id: id,
       zones: nodes,
-      message: `스케줄 등록 - ${req.body.name} ${file.name}`
+      message: `스케줄 등록 - ${req.body.name}`
     })
     res.status(200).json(r)
   } catch (e) {
@@ -176,7 +176,7 @@ module.exports.update = async (req, res) => {
       source: req.user.email,
       id: id,
       zones: nodes,
-      message: `스케줄 수정 - ${req.body.name} ${file.name}`
+      message: `스케줄 수정 - ${req.body.name}`
     })
     res.status(200).json(r)
   } catch (e) {

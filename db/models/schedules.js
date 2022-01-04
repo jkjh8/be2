@@ -12,6 +12,7 @@ const scheduleSchema = new mongoose.Schema(
     week: Array,
     user: String,
     file: Object,
+    playlist: Object,
     volume: Number,
     nodes: Array,
     selected: Array,

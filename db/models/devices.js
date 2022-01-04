@@ -4,7 +4,7 @@ const devicesSchema = new mongoose.Schema(
   {
     index: Number,
     name: String,
-    ipaddress: { type: String, required: true },
+    ipaddress: String,
     devicetype: String,
     detail: Object,
     mode: String,
