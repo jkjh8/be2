@@ -100,10 +100,26 @@ module.exports.updateMasterChannel = async (req, res) => {
 module.exports.updateChildChannel = async (req, res) => {
   try {
     const { id, channel, parent } = req.body
-    const r = await Devices.updateOne(
-      { _id: id },
-      { $set: { channel: channel, parent: parent } }
-    )
+    let r
+    if (id) {
+      const children = await Devices.findOne({ _id: id })
+      const device = await Devices.findOne({ _id: parent })
+      children.channel = channel
+      children.parent = parent
+
+      if (children.devicetype === 'Local') {
+        r = await qsys.clearChannel(
+          device.ipaddress,
+          children.ipaddress,
+          channel
+        )
+      } else {
+        r = await qsys.setChannel(device.ipaddress, children.ipaddress, channel)
+      }
+    } else {
+      const device = await Devices.findOne({ _id: parent })
+      r = await qsys.clearChannel(device.ipaddress, null, channel)
+    }
     res.status(200).json(r)
   } catch (e) {
     logger.error(`슬레이브 채널 업데이트 - 에러 - ${e.message}`)
@@ -119,17 +135,26 @@ module.exports.checkChild = async (req, res) => {
     })
     if (r && r.length) {
       logger.warn(`지역 중복체크 - 중복 - ${r.map((e) => e.name)}`)
+      return res.status(200).send(r.map((e) => e.name))
     }
     res.status(200).send(null)
   } catch (e) {
-    logger.error(`지역 중복 체크 에러 - ${e.message}`)
-    res.status(500).send(e.message)
+    logger.error(`지역 중복 체크 에러 - ${e}`)
+    res.status(500).send(e)
+  }
+}
+
+module.exports.setChannel = async (req, res) => {
+  try {
+    //
+  } catch (e) {
+    logger.error(`faild to Master device set channel - ${e}`)
   }
 }
 
 module.exports.addChild = async (req, res) => {
   try {
-    const { parent, child } = req.query
+    const { parent, child, channel } = req.query
     // 중복삭제
     const dup = await Devices.find({ children: { $all: [child] } })
     dup.forEach(async (item) => {
@@ -139,11 +164,17 @@ module.exports.addChild = async (req, res) => {
     })
     // 방송구간추가
     const device = await Devices.findById(parent)
+    const children = await Devices.findById(child)
     device.children.push(child)
-    const r = await device.save()
+    let r = await device.save()
 
     // qsys 채널 갱신 추가
     logger.info(`디바이스 Child 추가 - ${child}`)
+    if (children.devicetype === 'Local') {
+      r = await qsys.clearChannel(device.ipaddress, children.ipaddress, channel)
+    } else {
+      r = await qsys.setChannel(device.ipaddress, children.ipaddress, channel)
+    }
     res.status(200).json(r)
   } catch (e) {
     logger.error(`디바이스 child 추가 에러 - ${e.message}`)
@@ -279,7 +310,6 @@ module.exports.volume = async (req, res) => {
     if (volume || volume === 0) {
       target.gain[channel - 1] = volume
     }
-
     await target.save()
     const r = await qsys.setVolume(req.body)
     if (r && r.result) {
@@ -293,7 +323,7 @@ module.exports.volume = async (req, res) => {
       res.sendStatus(500)
     }
   } catch (e) {
-    logger.error(`디바이스 - 볼륨 에러 - ${e.message}`)
+    logger.error(`디바이스 - 볼륨 에러 - ${e}`)
     res.sendStatus(500)
   }
 }

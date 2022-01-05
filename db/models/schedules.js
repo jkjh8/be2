@@ -4,6 +4,8 @@ const scheduleSchema = new mongoose.Schema(
   {
     id: String,
     name: String,
+    priority: Number,
+    maxtime: { type: Number, default: 300 },
     repeat: String,
     mode: String,
     time: String,

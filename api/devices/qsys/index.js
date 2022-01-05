@@ -253,17 +253,53 @@ const setVolume = async (value) => {
           Value: mute
         })
       }
+      console.log('command', command)
       const r = await send(device.ipaddress, command)
+      console.log('qsys rt', r)
       return r
     }
   } catch (e) {
-    throw e
+    console.error(e)
+  }
+}
+
+const setChannel = async (parent, child, channel) => {
+  try {
+    const command = {
+      jsonrpc: '2.0',
+      id: 'setChannel',
+      method: 'Component.Set',
+      params: {
+        Name: `TX${channel}`,
+        Controls: [{ Name: 'host', Value: child }]
+      }
+    }
+    return await send(parent, command)
+  } catch (e) {
+    console.error(e)
+  }
+}
+
+const clearChannel = async (parent, child, channel) => {
+  try {
+    const command = {
+      jsonrpc: '2.0',
+      id: 'setChannel',
+      method: 'Component.Set',
+      params: {
+        Name: `TX${channel}`,
+        Controls: [{ Name: 'host', Value: '' }]
+      }
+    }
+    return await send(parent, command)
+  } catch (e) {
+    console.error(e)
   }
 }
 
 const onair = async (args) => {
   try {
-    const { name, ipaddress, channels } = args
+    const { name, ipaddress, channels, priority, maxtime } = args
     const command = {
       jsonrpc: '2.0',
       id: `onair`,
@@ -272,13 +308,13 @@ const onair = async (args) => {
         Zones: channels,
         Description: name,
         Mode: 'live',
-        Station: 1,
-        Priority: 3,
-        Start: true
+        Station: 2,
+        Priority: priority,
+        Start: true,
+        MaxPageTime: maxtime
       }
     }
-    const r = await send(ipaddress, command)
-    return r
+    return await send(ipaddress, command)
   } catch (e) {
     throw e
   }
@@ -331,6 +367,8 @@ module.exports = {
   getStatus,
   getPA,
   setVolume,
+  setChannel,
+  clearChannel,
   onair,
   offair,
   updatePA,

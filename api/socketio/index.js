@@ -61,6 +61,10 @@ exports = module.exports = (app) => {
               zones: args.nodes,
               message: `방송시작 - ${args.mode} - ${args.file.name}`
             })
+            app.io.emit('page_start', {
+              source: args.user,
+              zones: args.nodes
+            })
 
             const deviceState = await Devices.find().populate('children')
             console.log('emit devices')
@@ -83,6 +87,8 @@ exports = module.exports = (app) => {
               zones: args.nodes,
               message: `방송종료`
             })
+            app.io.emit('page_end', { source: args.user, zones: args.nodes })
+
             const deviceState = await Devices.find().populate('children')
             console.log('emit devices')
             app.io.emit('devices', deviceState)

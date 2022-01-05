@@ -47,14 +47,16 @@ exports.check = async (command) => {
 
 exports.onair = async (command, app) => {
   return new Promise(async (resolve, reject) => {
-    const { name, nodes } = command
+    const { name, nodes, priority, maxtime } = command
     const broadcastzones = []
 
     try {
       nodes.forEach(async (item) => {
         const r = await qsys.onair({
           ...item,
-          name: name
+          name: name,
+          priority,
+          maxtime
         })
         const device = await Devices.findOne({ ipaddress: item.ipaddress })
         for (let i = 0; i < item.channels.length; i++) {
