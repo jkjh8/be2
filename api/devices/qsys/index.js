@@ -308,7 +308,7 @@ const onair = async (args) => {
         Zones: channels,
         Description: name,
         Mode: 'live',
-        Station: 2,
+        Station: 1,
         Priority: priority,
         Start: true,
         MaxPageTime: maxtime

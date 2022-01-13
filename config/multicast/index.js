@@ -8,6 +8,7 @@ module.exports = (app) => {
       app.multicast.setBroadcast(true)
       app.multicast.setMulticastTTL(128)
       app.multicast.addMembership(app.multicastAddress)
+      logger.info(`multicast server start at ${app.multiccastAddress}`)
     })
   } catch (err) {
     logger.error(`multicast start error, ${err}`)

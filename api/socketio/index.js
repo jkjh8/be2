@@ -69,6 +69,13 @@ exports = module.exports = (app) => {
             const deviceState = await Devices.find().populate('children')
             console.log('emit devices')
             app.io.emit('devices', deviceState)
+
+            // player command
+            app.multicast.send(
+              JSON.stringify({ key: 'onair', ...args }),
+              12300,
+              app.multicastAddress
+            )
           } catch (e) {
             logger.error(`라이브 온에어 - 에러 ${e}`)
           }
@@ -80,18 +87,25 @@ exports = module.exports = (app) => {
               { id: args.id },
               { $set: { state: false } }
             )
-            logger.info(`방송 - 라이브 종료 ${JSON.stringify(args)}`)
+            logger.info(`방송 - 라이브 정지 ${JSON.stringify(args)}`)
             eventlog.info({
               source: args.user,
               id: args.id,
               zones: args.nodes,
-              message: `방송종료`
+              message: '방송 정지'
             })
             app.io.emit('page_end', { source: args.user, zones: args.nodes })
 
             const deviceState = await Devices.find().populate('children')
             console.log('emit devices')
             app.io.emit('devices', deviceState)
+
+            // player command
+            app.multicast.send(
+              JSON.stringify({ key: 'offair', ...args }),
+              12300,
+              app.multicastAddress
+            )
           } catch (e) {
             logger.error(`라이브 오프에어 - 에러 ${e}`)
           }

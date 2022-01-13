@@ -13,5 +13,6 @@ router.post('/download', isLoggedIn, files.download)
 router.get('/getTree', isLoggedIn, files.getTree)
 router.get('/check', isLoggedIn, files.check)
 router.get('/deleteTempFolder', isAdmin, files.deleteTemp)
+router.get('/getSound', files.getSounds)
 
 module.exports = router

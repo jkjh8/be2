@@ -4,70 +4,91 @@ const logger = require('config/logger')
 const eventlog = require('api/eventlog')
 const dirTree = require('async-directory-tree')
 
-module.exports.get = async (req, res) => {
-  const { folder } = req.body
-  let remotePath
-  let currentPath
-  if (folder && folder.length && folder !== 'undefined') {
-    remotePath = folder.join('/')
-    currentPath = path.join(filesPath, remotePath)
-  } else {
-    remotePath = ''
-    currentPath = path.join(filesPath)
-  }
-
-  try {
-    const rt = []
-    const files = await fs.readdirSync(currentPath, { withFileTypes: true })
-    for (let i = 0; i < files.length; i++) {
-      if (files[i].isDirectory()) {
+async function getFilesOnDirectory(remotePath, currentPath) {
+  const rt = []
+  const files = await fs.readdirSync(currentPath, { withFileTypes: true })
+  for (let i = 0; i < files.length; i++) {
+    if (files[i].isDirectory()) {
+      rt.push({
+        index: i,
+        type: 'directory',
+        base: remotePath,
+        fullpath: currentPath,
+        file: path.join(currentPath, files[i].name),
+        stream: path.join(remotePath, files[i].name),
+        name: files[i].name
+      })
+    } else {
+      // prettier-ingnore
+      if (new RegExp(/.wav|.mp3/g).test(files[i].name)) {
         rt.push({
           index: i,
-          type: 'directory',
+          type: 'audio',
           base: remotePath,
           fullpath: currentPath,
           file: path.join(currentPath, files[i].name),
-          name: files[i].name
+          stream: path.join(remotePath, files[i].name),
+          name: files[i].name,
+          size: fs.statSync(path.join(currentPath, files[i].name)).size
+        })
+      } else if (new RegExp(/.mp4|.mkv|.mov/g).test(files[i].name)) {
+        rt.push({
+          index: i,
+          type: 'video',
+          base: remotePath,
+          fullpath: currentPath,
+          file: path.join(currentPath, files[i].name),
+          stream: path.join(remotePath, files[i].name),
+          name: files[i].name,
+          size: fs.statSync(path.join(currentPath, files[i].name)).size
         })
       } else {
-        // prettier-ingnore
-        if (new RegExp(/.wav|.mp3/g).test(files[i].name)) {
-          rt.push({
-            index: i,
-            type: 'audio',
-            base: remotePath,
-            fullpath: currentPath,
-            file: path.join(currentPath, files[i].name),
-            name: files[i].name,
-            size: fs.statSync(path.join(currentPath, files[i].name)).size
-          })
-        } else if (new RegExp(/.mp4|.mkv|.mov/g).test(files[i].name)) {
-          rt.push({
-            index: i,
-            type: 'video',
-            base: remotePath,
-            fullpath: currentPath,
-            file: path.join(currentPath, files[i].name),
-            name: files[i].name,
-            size: fs.statSync(path.join(currentPath, files[i].name)).size
-          })
-        } else {
-          rt.push({
-            index: i,
-            type: 'etc',
-            base: remotePath,
-            fullpath: currentPath,
-            file: path.join(currentPath, files[i].name),
-            name: files[i].name,
-            size: fs.statSync(path.join(currentPath, files[i].name)).size
-          })
-        }
+        rt.push({
+          index: i,
+          type: 'etc',
+          base: remotePath,
+          fullpath: currentPath,
+          file: path.join(currentPath, files[i].name),
+          stream: path.join(remotePath, files[i].name),
+          name: files[i].name,
+          size: fs.statSync(path.join(currentPath, files[i].name)).size
+        })
       }
     }
+  }
+  return rt
+}
+
+module.exports.get = async (req, res) => {
+  try {
+    const { folder } = req.body
+    let remotePath
+    let currentPath
+    if (folder && folder.length && folder !== 'undefined') {
+      remotePath = folder.join('/')
+      currentPath = path.join(filesPath, remotePath)
+    } else {
+      remotePath = ''
+      currentPath = path.join(filesPath)
+    }
+
+    const rt = await getFilesOnDirectory(remotePath, currentPath)
     res.status(200).json({ files: rt, path: folder })
   } catch (err) {
     logger.error(`파일 읽기 - 서버 에러 ${err}`)
     res.status(500).json({ error: err, message: '폴더를 읽을 수 없습니다' })
+  }
+}
+
+module.exports.getSounds = async (req, res) => {
+  try {
+    const remotePath = 'Sound'
+    const currentPath = path.join(filesPath, 'Sound')
+    const rt = await getFilesOnDirectory(remotePath, currentPath)
+    res.status(200).json(rt)
+  } catch (e) {
+    logger.error(`Get files error on sound folder ${e}`)
+    res.sendStatus(500)
   }
 }
 
@@ -92,6 +113,7 @@ module.exports.getFolder = async (req, res) => {
           index: i,
           type: 'directory',
           base: remotePath,
+          stream: path.join(remotePath, files[i].name),
           fullpath: currentPath,
           name: files[i].name
         })

@@ -8,5 +8,6 @@ router.use('/schedule', require('./schedule'))
 
 router.get('/pagePreset', isLoggedIn, broadcast.getPreset)
 router.post('/pagePreset', isLoggedIn, broadcast.savePreset)
+router.post('/onended', broadcast.onEnded)
 
 module.exports = router

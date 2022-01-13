@@ -70,6 +70,7 @@ makeFolder(filesPath)
 makeFolder(path.join(filesPath, 'Media'))
 makeFolder(path.join(filesPath, 'Schedule'))
 makeFolder(path.join(filesPath, 'Temp'))
+makeFolder(path.join(filesPath, 'Sound'))
 
 app.use('/files', express.static(filesPath))
 app.use('/media', express.static(path.join(filesPath, 'Media')))
@@ -97,5 +98,5 @@ cron.schedule('*/7 * * * *', async () => {
 cron.schedule('*/1 * * * *', async () => {
   await schedule.parcing()
 })
-
+global.app = app
 module.exports = app

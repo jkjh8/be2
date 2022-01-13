@@ -15,8 +15,7 @@ module.exports.get = async (address) => {
       })
       resolve(rt)
     } catch (e) {
-      console.error(e)
-      reject(null)
+      reject(e)
     }
   })
 }

@@ -230,7 +230,7 @@ const fnRefresh = async (device) => {
         break
     }
   } catch (e) {
-    logger.error(`디바이스 - 갱신 에러 ${e.message}`)
+    logger.error(`디바이스 - 갱신 에러 ${e}`)
     await Devices.updateOne(
       { ipaddress: device.ipaddress },
       { $set: { status: false } }
