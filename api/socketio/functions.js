@@ -1,7 +1,7 @@
 const Devices = require('db/models/devices')
 const qsys = require('api/devices/qsys')
 
-const refreshPa = (args) => {
+const checkBroadcastZones = (args) => {
   return new Promise(async (resolve, reject) => {
     try {
       const { ipaddress, channels, children } = args
@@ -30,7 +30,7 @@ exports.check = async (command) => {
     const dup = []
     try {
       for (let i = 0; i < nodes.length; i++) {
-        const r = await refreshPa(nodes[i])
+        const r = await checkBroadcastZones(nodes[i])
         if (r && r.length) {
           dup.push({
             name: nodes[i].name,
@@ -78,8 +78,8 @@ exports.onair = async (command, app) => {
         }
       })
     } catch (e) {
-      console.error(e.message)
-      reject(e.message)
+      console.error(e)
+      reject(e)
     }
   })
 }
@@ -106,8 +106,8 @@ exports.offair = async (command) => {
         }
       })
     } catch (e) {
-      console.error(e.message)
-      reject(e.message)
+      console.error(e)
+      reject(e)
     }
   })
 }

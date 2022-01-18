@@ -263,7 +263,7 @@ const setVolume = async (value) => {
   }
 }
 
-const setChannel = async (parent, child, channel) => {
+const setChannel = async (parent, child, port, channel) => {
   try {
     const command = {
       jsonrpc: '2.0',
@@ -271,7 +271,10 @@ const setChannel = async (parent, child, channel) => {
       method: 'Component.Set',
       params: {
         Name: `TX${channel}`,
-        Controls: [{ Name: 'host', Value: child }]
+        Controls: [
+          { Name: 'host', Value: child },
+          { Name: 'port', Value: port }
+        ]
       }
     }
     return await send(parent, command)

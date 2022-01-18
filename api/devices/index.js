@@ -99,13 +99,16 @@ module.exports.updateMasterChannel = async (req, res) => {
 
 module.exports.updateChildChannel = async (req, res) => {
   try {
-    const { id, channel, parent } = req.body
+    const { id, channel, port, parent } = req.body
     let r
     if (id) {
       const children = await Devices.findOne({ _id: id })
       const device = await Devices.findOne({ _id: parent })
       children.channel = channel
       children.parent = parent
+      children.port = port
+
+      console.log(req.body)
 
       if (children.devicetype === 'Local') {
         r = await qsys.clearChannel(
@@ -114,7 +117,12 @@ module.exports.updateChildChannel = async (req, res) => {
           channel
         )
       } else {
-        r = await qsys.setChannel(device.ipaddress, children.ipaddress, channel)
+        r = await qsys.setChannel(
+          device.ipaddress,
+          children.ipaddress,
+          children.port,
+          channel
+        )
       }
     } else {
       const device = await Devices.findOne({ _id: parent })
@@ -171,9 +179,19 @@ module.exports.addChild = async (req, res) => {
     // qsys 채널 갱신 추가
     logger.info(`디바이스 Child 추가 - ${child}`)
     if (children.devicetype === 'Local') {
-      r = await qsys.clearChannel(device.ipaddress, children.ipaddress, channel)
+      r = await qsys.clearChannel(
+        device.ipaddress,
+        children.ipaddress,
+        children.port,
+        channel
+      )
     } else {
-      r = await qsys.setChannel(device.ipaddress, children.ipaddress, channel)
+      r = await qsys.setChannel(
+        device.ipaddress,
+        children.ipaddress,
+        children.port,
+        channel
+      )
     }
     res.status(200).json(r)
   } catch (e) {
@@ -288,6 +306,14 @@ module.exports.refreshPa = async (req, res) => {
   }
 }
 
+module.exports.fnRefreshPa = async (ipaddress) => {
+  try {
+    await refreshPa(ipaddress)
+  } catch (e) {
+    console.error(e)
+  }
+}
+
 const refreshPa = async (ipaddress) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -328,7 +354,7 @@ module.exports.volume = async (req, res) => {
   }
 }
 
-module.exports.cancelAll = async (req, res) => {
+module.exports.cancel = async (req, res) => {
   try {
     const { ipaddress, user } = req.query
     await qsys.cancelAll(ipaddress, user)
