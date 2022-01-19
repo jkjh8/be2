@@ -41,6 +41,7 @@ module.exports.onEnded = async (req, res) => {
 }
 
 const fnOnEnded = async (args) => {
+  console.log('load onended')
   await offair(args)
   await Broadcast.updateOne({ id: args.id }, { $set: { state: false } })
   logger.info(`방송 - 라이브 종료 ${JSON.stringify(args)}`)
@@ -79,6 +80,54 @@ module.exports.cancelAll = async (req, res) => {
   }
 }
 
+// 중복지역 상세 체크
+const checkBroadcastZones = (args) => {
+  return new Promise(async (resolve, reject) => {
+    try {
+      const { ipaddress, channels, children } = args
+      const r = await qsys.getPA(ipaddress)
+      const { active } = await qsys.updatePA(ipaddress, r)
+      const dup = []
+
+      for (let i = 0; i < channels.length; i++) {
+        if (active[channels[i] - 1]) {
+          dup.push({
+            name: children[channels[i] - 1].name,
+            channel: channels[i]
+          })
+        }
+      }
+      resolve(dup)
+    } catch (e) {
+      reject(e)
+    }
+  })
+}
+
+// 중복 지역 체크
+const checkActiveZones = async (args) => {
+  return new Promise(async (resolve, reject) => {
+    const { nodes } = args
+    const dup = []
+    try {
+      for (let i = 0; i < nodes.length; i++) {
+        const rt = await checkBroadcastZones(nodes[i])
+        if (rt && rt.length) {
+          dup.push({
+            name: nodes[i].name,
+            dup: rt
+          })
+        }
+      }
+      resolve(dup)
+    } catch (e) {
+      reject(e)
+    }
+  })
+}
+
+module.exports.checkActiveZones = checkActiveZones
+
 const onair = async (command) => {
   return new Promise(async (resolve, reject) => {
     try {
@@ -90,7 +139,6 @@ const onair = async (command) => {
       // start command
       const { name, nodes, priority, maxtime } = command
       const broadcastzones = []
-
       nodes.forEach(async (item) => {
         const rt = await qsys.onair({
           ...item,
@@ -98,6 +146,8 @@ const onair = async (command) => {
           priority,
           maxtime
         })
+
+        console.log(rt)
 
         // device onair update
         const device = await Devices.findOne({ ipaddress: item.ipaddress })
@@ -166,6 +216,7 @@ const offair = async (command) => {
 
         //resolve condition
         if (broadcastzones.length === nodes.length) {
+          clearTimeout(timeout)
           resolve(broadcastzones)
         }
       })

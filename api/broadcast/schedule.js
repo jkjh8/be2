@@ -5,6 +5,8 @@ const fs = require('fs')
 const path = require('path')
 const moment = require('moment')
 
+const fnBroadcast = require('api/broadcast')
+
 const makeFolder = (dir) => {
   if (!fs.existsSync(dir)) {
     fs.mkdirSync(dir)
@@ -235,24 +237,33 @@ module.exports.parcing = async () => {
   const time = moment(now).format('HH:mm')
   const week = moment(now).weekday()
   console.log(date, time, week)
-  const schedules = await Schedules.findOne({ time: time })
-  console.log('schedule', schedules)
-  if (schedules.active) {
-    if (schedules.repeat === '매일') {
+  const schedule = await Schedules.findOne({ time: time })
+  if (schedule.active) {
+    if (schedule.repeat === '매일') {
+      startOnairSchedule(schedule)
       return console.log('스케줄 매일')
-    } else if (schedules.repeat === '한번') {
-      if (schedules.date == date) {
+    } else if (schedule.repeat === '한번') {
+      if (schedule.date == date) {
+        startOnairSchedule(schedule)
         return console.log('스케줄 한번')
       }
-    } else if (schedules.repeat === '매주') {
-      for (let i = 0; i < schedules.week.length; i++) {
-        if (schedules.week[i] == week) {
+    } else if (schedule.repeat === '매주') {
+      for (let i = 0; i < schedule.week.length; i++) {
+        if (schedule.week[i] == week) {
+          startOnairSchedule(schedule)
           console.log('스케줄 매주')
           break
         }
       }
     }
   }
+}
+
+const startOnairSchedule = async (schedule) => {
+  const command = { key: 'schedule', ...schedule._doc }
+
+  await fnBroadcast.onair(command)
+  app.multicast.send(JSON.stringify(command), 12300, app.multicastAddress)
 }
 // function zoneToString(zones) {
 //   const rt = []

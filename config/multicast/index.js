@@ -22,8 +22,7 @@ module.exports = (app) => {
   app.multicast.on('message', (msg) => {
     try {
       const message = JSON.parse(msg)
-      console.log(message)
-      switch (msg.key) {
+      switch (message.key) {
         case 'onEnded':
           fnBroadcast.fnOnEnded(message.value)
           break

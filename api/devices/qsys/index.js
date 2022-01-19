@@ -319,7 +319,7 @@ const onair = async (args) => {
     }
     return await send(ipaddress, command)
   } catch (e) {
-    throw e
+    logger.error(e)
   }
 }
 

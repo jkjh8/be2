@@ -3,6 +3,7 @@ const eventlog = require('api/eventlog')
 const Broadcast = require('db/models/broadcast')
 const Devices = require('db/models/devices')
 const { check, onair, offair } = require('./functions')
+const fnBroadcast = require('api/broadcast')
 
 exports = module.exports = (app) => {
   app.io.on('connection', (socket) => {
@@ -47,7 +48,7 @@ exports = module.exports = (app) => {
           break
         case 'onair':
           try {
-            r = await onair(args, app)
+            r = await fnBroadcast.onair(args, app)
             const broadcastId = new Broadcast({
               id: args.id,
               zones: r,
