@@ -150,24 +150,24 @@ const onair = async (command) => {
         console.log(rt)
 
         // device onair update
-        const device = await Devices.findOne({ ipaddress: item.ipaddress })
-        for (let i = 0; i < item.channels.length; i++) {
-          device.active[item.channels[i] - 1] = true
-        }
         // update PageID
-        device.pageid = rt.result.PageID
-        // db update
-        await device.save()
-
-        broadcastzones.push({
-          broadcastname: name,
-          name: device.name,
-          ipaddress: device.ipaddress,
-          pageid: device.pageid
-        })
-
-        // send socket message
-        app.io.emit('page_message', `${device.name} 방송 기동 완료`)
+        if (rt && rt.result) {
+          const device = await Devices.findOne({ ipaddress: item.ipaddress })
+          for (let i = 0; i < item.channels.length; i++) {
+            device.active[item.channels[i] - 1] = true
+          }
+          device.pageid = rt.result.PageID
+          // db update
+          await device.save()
+          broadcastzones.push({
+            broadcastname: name,
+            name: device.name,
+            ipaddress: device.ipaddress,
+            pageid: device.pageid
+          })
+          // send socket message
+          app.io.emit('page_message', `${device.name} 방송 기동 완료`)
+        }
 
         // resolve condition
         if (nodes.length === broadcastzones.length) {
